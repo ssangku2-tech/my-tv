@@ -5,7 +5,7 @@
 CODE = "PUT-YOUR-CODE-HERE"
 Set sh = CreateObject("WScript.Shell")
 ' Already open? Then don't open a second window.
-Set wmi = GetObject("winmgmts:\.\root\cimv2")
+Set wmi = GetObject("winmgmts:\\.\root\cimv2")
 For Each p In wmi.ExecQuery("SELECT CommandLine FROM Win32_Process WHERE Name = 'msedge.exe'")
   If Not IsNull(p.CommandLine) Then
     If InStr(p.CommandLine, "my-tv-pc-screen") > 0 Then WScript.Quit
