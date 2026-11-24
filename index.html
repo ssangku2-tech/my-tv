@@ -5,185 +5,205 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>나만의 TV</title>
 <meta name="description" content="한국 TV와 해외 영어 뉴스 채널을 한 화면에서 바로 보는 TV. 영어 방송은 실시간 2줄 자막">
-<meta name="theme-color" content="#3d2a1d">
+<meta name="theme-color" content="#06070b">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg?v=1" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1">
+<link rel="icon" href="icons/icon.svg?v=2" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="TV">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
 <style>
-/* VOICE: 나만의 라디오의 짝 — 거실에 놓인 호두나무 브라운관 TV. 따뜻하고 단정함
-   IDEA: 호두나무 캐비닛 안에 둥근 모서리 브라운관, 황동 테두리. 켜면 화면에 불이 들어오고, 채널 바꿀 땐 지지직
-   COLOUR and TYPE: 호두 #3d2a1d, 상아 #f0e4c8, 황동 #c49a4a; 바탕은 바랜 종이 #f2ebdf; IBM Plex Sans KR (라디오와 같음)
-   LAYOUT: 머리줄 → 캐비닛(화면·방송 이름·조작부) → 자막·취침·끄기 도구줄 → 분류 → 채널 그리드 → 세계 채널 찾기 */
-:root{color-scheme:light dark;
- --bg:light-dark(#f2ebdf,#15110d);--ink:light-dark(#2a1f17,#f1e6d2);--mute:light-dark(#76665a,#a8977f);
- --line:light-dark(#dccfba,#3a2f25);--card:light-dark(#fbf7ef,#211a14);
- --wal:#3d2a1d;--wal2:#2c1e14;--ivory:#f0e4c8;--brass:#c49a4a;--brass-l:#e8cd8e;--brass-d:#7f5b22}
+/* VOICE: 조용하고 정확한 미래형 — 군더더기 없이, 화면이 주인공
+   IDEA: 검은 유리 위에 보라·청록 오로라 빛이 천천히 흐름. 켜진 화면과 지금 채널만 빛으로 테두리
+   COLOUR and TYPE: 바탕 #06070b, 유리 흰색 4%, 선 흰색 8%, 강조 보라 #8b6cff → 청록 #22d3ee 그라데이션; Pretendard
+   LAYOUT: 머리줄 → 유리 패널(화면·채널 이름·조작부) → 출력·취침·끄기 → 영어 자막 → 분류 → 채널 타일 → 세계 채널 찾기 */
+:root{color-scheme:dark;--bg:#06070b;--bg2:#0d0f17;--ink:#eef0f7;--mute:#8a90a6;--dim:#5d6377;
+ --glass:rgba(255,255,255,.045);--glass2:rgba(255,255,255,.075);--line:rgba(255,255,255,.085);--line2:rgba(255,255,255,.16);
+ --a1:#8b6cff;--a2:#22d3ee;--a3:#f472b6;--grad:linear-gradient(120deg,var(--a1),var(--a2));--mono:ui-monospace,"SF Mono","JetBrains Mono",Consolas,monospace}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans KR",system-ui,sans-serif;overflow-x:clip}
-button,input,select{font:inherit;color:inherit}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Pretendard Variable",Pretendard,system-ui,-apple-system,sans-serif;letter-spacing:-.011em;overflow-x:clip;-webkit-font-smoothing:antialiased}
+/* 오로라: 화면 뒤에서 천천히 흐르는 빛 */
+body::before,body::after{content:"";position:fixed;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(90px);opacity:.5}
+body::before{width:60vmax;height:60vmax;left:-18vmax;top:-26vmax;background:radial-gradient(circle,rgba(139,108,255,.55),transparent 62%);animation:au1 22s ease-in-out infinite alternate}
+body::after{width:55vmax;height:55vmax;right:-20vmax;top:10vmax;background:radial-gradient(circle,rgba(34,211,238,.38),transparent 62%);animation:au2 26s ease-in-out infinite alternate}
+@keyframes au1{to{transform:translate(14vmax,10vmax) scale(1.15)}}@keyframes au2{to{transform:translate(-12vmax,16vmax) scale(.9)}}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
-:focus-visible{outline:3px solid #2f7cf6;outline-offset:2px}
+:focus-visible{outline:2px solid var(--a2);outline-offset:3px}
 .band{padding:clamp(16px,3vw,36px) max(4vw,16px)}
-.wrap{max-width:880px;margin:0 auto}
+.wrap{max-width:920px;margin:0 auto}
 /* 머리줄 */
-.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;max-width:880px;margin:0 auto 14px}
-.top h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.01em}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;max-width:920px;margin:0 auto 16px}
+.top h1{display:flex;align-items:center;gap:10px;font-size:19px;margin:0;font-weight:700;letter-spacing:-.02em}
+.top h1 img{width:30px;height:30px;border-radius:9px}
+.top h1 .gt{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 .tr{display:flex;gap:12px;align-items:center}
-.clock{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px}
-.inst{background:var(--wal);color:var(--ivory);border:0;border-radius:99px;padding:8px 16px;min-height:40px;font-weight:700}
+.clock{font:500 13px var(--mono);color:var(--mute);letter-spacing:0}
+.inst{background:var(--grad);color:#05060a;border:0;border-radius:99px;padding:8px 16px;min-height:38px;font-weight:700}
 .inst[hidden]{display:none}
-/* 캐비닛 */
-.cab{max-width:880px;margin:0 auto;border-radius:22px;padding:clamp(12px,2.4vw,24px);color:var(--ivory);
- background:linear-gradient(100deg,#47301f 0%,#3a281b 22%,#4b3322 46%,#36251a 70%,#443020 100%);
- box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -8px 18px rgba(0,0,0,.3) inset,0 14px 30px -14px rgba(40,25,10,.55)}
-/* 브라운관 */
-.scr{position:relative;aspect-ratio:16/9;border-radius:26px/22px;overflow:hidden;background:#0b0907;container-type:inline-size;
- box-shadow:0 0 0 4px var(--brass-d),0 0 0 6px var(--brass),0 0 0 9px #241811,inset 0 0 40px rgba(0,0,0,.9)}
+/* 유리 패널 */
+.cab{max-width:920px;margin:0 auto;border-radius:28px;padding:clamp(12px,2vw,20px);background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.025));
+ border:1px solid var(--line);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 30px 80px -40px rgba(0,0,0,.8);-webkit-backdrop-filter:blur(24px) saturate(140%);backdrop-filter:blur(24px) saturate(140%)}
+/* 화면 */
+.scr{position:relative;aspect-ratio:16/9;border-radius:20px;overflow:hidden;background:#000;container-type:inline-size;
+ box-shadow:0 0 0 1px var(--line2);transition:box-shadow .6s}
+.playing .scr{box-shadow:0 0 0 1px rgba(139,108,255,.55),0 24px 90px -30px rgba(139,108,255,.7),0 12px 70px -40px rgba(34,211,238,.8)}
 .scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
-.scr::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
- background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.07),transparent 45%),radial-gradient(ellipse at center,transparent 62%,rgba(0,0,0,.45))}
 .scr:fullscreen{border-radius:0;box-shadow:none;aspect-ratio:auto;width:100vw;height:100vh}
-.scr:fullscreen::after{display:none}
-.off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#8f7c62;font-size:clamp(14px,3cqw,22px);padding:20px;
- background:radial-gradient(ellipse at center,#1d1813,#0b0907 70%)}
+.off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:var(--mute);font-size:clamp(13px,2.4cqw,20px);padding:20px;
+ background:radial-gradient(ellipse 70% 60% at 50% 45%,rgba(139,108,255,.14),transparent 70%),
+  linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/6cqw 6cqw,linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/6cqw 6cqw,#05060a}
 .off[hidden]{display:none}
-.noise{position:absolute;inset:0;width:100%;height:100%;opacity:.55;image-rendering:pixelated}
-.noise[hidden]{display:none}
-.osd{position:absolute;left:4cqw;top:3.5cqw;font:700 clamp(14px,3.6cqw,34px)/1.1 ui-monospace,Consolas,monospace;color:#7dff8f;
- text-shadow:0 0 6px rgba(80,255,110,.7),2px 2px 0 rgba(0,0,0,.6);opacity:0;transition:opacity .3s;pointer-events:none;letter-spacing:.02em}
-.osd.show{opacity:1}
-.busy{position:absolute;right:4cqw;top:3.5cqw;font-size:clamp(11px,2cqw,16px);background:rgba(0,0,0,.6);color:var(--ivory);border-radius:99px;padding:2px 12px;pointer-events:none}
+/* 연결 중: 빛 고리가 돎 */
+.scr.loading::before{content:"";position:absolute;z-index:2;left:50%;top:50%;width:11cqw;height:11cqw;margin:-5.5cqw 0 0 -5.5cqw;border-radius:50%;
+ background:conic-gradient(from 0deg,transparent 0 25%,var(--a1) 60%,var(--a2));-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 3px));animation:spin .9s linear infinite}
+.scr.loading::after{content:"";position:absolute;inset:0;z-index:1;background:radial-gradient(circle at 50% 50%,rgba(139,108,255,.18),rgba(0,0,0,.55) 60%)}
+@keyframes spin{to{transform:rotate(1turn)}}
+.osd{position:absolute;z-index:3;left:3cqw;top:3cqw;display:flex;align-items:center;gap:.6em;font-size:clamp(12px,2.2cqw,22px);font-weight:600;color:#fff;
+ padding:.45em .9em .45em .5em;border-radius:99px;background:rgba(8,9,16,.55);border:1px solid rgba(255,255,255,.14);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+ opacity:0;transform:translateY(-6px);transition:opacity .35s,transform .35s;pointer-events:none}
+.osd i{font:700 .8em var(--mono);font-style:normal;padding:.2em .55em;border-radius:99px;background:var(--grad);color:#05060a}
+.osd.show{opacity:1;transform:none}
+.busy{position:absolute;z-index:3;right:3cqw;top:3cqw;font-size:clamp(11px,1.8cqw,15px);background:rgba(8,9,16,.6);border:1px solid rgba(255,255,255,.12);color:var(--ink);border-radius:99px;padding:3px 12px;pointer-events:none}
 .busy[hidden]{display:none}
 /* 자막: 화면 아래 2줄 */
-.sub{position:absolute;left:6cqw;right:6cqw;bottom:5cqw;text-align:center;pointer-events:none;font-size:clamp(14px,3.3cqw,40px);line-height:1.4}
+.sub{position:absolute;z-index:3;left:7cqw;right:7cqw;bottom:4.5cqw;text-align:center;pointer-events:none;font-size:clamp(15px,3.3cqw,42px);line-height:1.4;
+ color:#fff;font-weight:650;letter-spacing:-.005em;text-shadow:0 0 1px #000,0 0 2px #000,0 1px 3px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.55)}
 .sub[hidden]{display:none}
-.subx{height:2.8em;overflow:hidden}
-.sub span.l{background:rgba(0,0,0,.72);color:#fff;padding:.05em .35em;-webkit-box-decoration-break:clone;box-decoration-break:clone;font-weight:600;border-radius:.2em}
-.sub .wait{background:rgba(0,0,0,.6);color:#d9c9a6;font-size:.7em;padding:.1em .6em;border-radius:.3em}
-.subko{display:none;margin-top:.1em;height:1.4em;overflow:hidden}
-.subko span{background:rgba(0,0,0,.72);color:#ffe08a;padding:.05em .35em;font-weight:600;border-radius:.2em}
-.sub.ko .subx{height:1.4em}.sub.ko .subko{display:block}
-/* 방송 이름 */
-.now{display:flex;gap:10px;align-items:center;margin-top:18px}
+/* 글자 뒤 화면 아래쪽만 살짝 어둡게 (상자 대신) */
+.sub::before{content:"";position:absolute;z-index:-1;left:-7cqw;right:-7cqw;bottom:-4.5cqw;height:26cqw;background:linear-gradient(transparent,rgba(0,0,0,.28) 45%,rgba(0,0,0,.5));transition:opacity .8s}
+.subx{height:2.8em;overflow:hidden;transition:opacity .8s;-webkit-mask:linear-gradient(transparent,#000 .35em);mask:linear-gradient(transparent,#000 .35em)}
+.sub .nw{animation:wIn .45s ease-out both}
+@keyframes wIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
+.sub.hush .subx,.sub.hush .subko,.sub.hush::before{opacity:0}
+.sub .wait{text-shadow:none;font-weight:500;display:inline-flex;align-items:center;gap:.5em;background:rgba(6,7,12,.66);color:#c9cde0;font-size:.62em;padding:.3em .9em;border-radius:99px;border:1px solid rgba(255,255,255,.12)}
+.sub .wait::before{content:"AI";font:800 .8em var(--mono);padding:.1em .45em;border-radius:99px;background:var(--grad);color:#05060a}
+.subko{display:none;margin-top:.1em;height:1.4em;overflow:hidden;color:#9becff;transition:opacity .8s}
+.sub.ko .subx{height:1.4em;-webkit-mask:none;mask:none}.sub.ko .subko{display:block}
+/* 채널 이름 */
+.now{display:flex;gap:12px;align-items:center;margin:18px 4px 0}
 .now-l{flex:1}
-.now-name{font-size:clamp(24px,4vw,38px);line-height:1.1;font-weight:700;text-wrap:balance}
-.now-name em{font-style:normal;color:var(--brass-l);font-variant-numeric:tabular-nums;margin-right:.35em;font-size:.7em;vertical-align:.15em}
-.now-desc{color:#d9c9a6;font-size:15px;min-height:1.5em;margin-top:4px}
-.star{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid rgba(240,228,200,.35);background:none;color:#d9c9a6;display:grid;place-items:center}
-.star svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
-.star.on{color:var(--brass-l);border-color:var(--brass)}.star.on svg{fill:currentColor}
-.lamp{display:flex;align-items:center;gap:7px;font-size:13px;color:#d9c9a6;white-space:nowrap;margin-top:6px}
+.now-name{display:flex;align-items:center;gap:12px;font-size:clamp(22px,3.6vw,34px);line-height:1.15;font-weight:700;letter-spacing:-.03em}
+.now-name em{font:600 .5em var(--mono);font-style:normal;letter-spacing:0;padding:.3em .7em;border-radius:99px;border:1px solid var(--line2);color:var(--mute)}
+.playing .now-name em{border-color:transparent;background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box;color:var(--ink)}
+.now-desc{color:var(--mute);font-size:14.5px;min-height:1.5em;margin-top:6px}
+.lamp{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;color:var(--mute);white-space:nowrap;margin-top:8px}
 .lamp[hidden]{display:none}
-.lamp::before{content:"";width:9px;height:9px;border-radius:50%;background:#5a4433;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
-.playing .lamp::before{background:#ffb347;box-shadow:0 0 8px 2px rgba(255,170,60,.7)}
+.lamp::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.playing .lamp::before{background:var(--a2);box-shadow:0 0 0 4px rgba(34,211,238,.18);animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(34,211,238,0)}}
 /* 조작부 */
-.panel{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(240,228,200,.16);padding-top:12px;margin-top:14px}
-.transport{display:flex;align-items:center;gap:12px}
-.rb{width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--wal2);
- background:radial-gradient(circle at 35% 30%,#fbf3df,#e2d2ad 70%,#c9b48a);box-shadow:0 2px 0 rgba(0,0,0,.35),inset 0 -2px 3px rgba(0,0,0,.15)}
-.rb svg{width:22px;height:22px;fill:currentColor}
-.rb.big{width:60px;height:60px;background:radial-gradient(circle at 35% 30%,var(--brass-l),var(--brass) 55%,var(--brass-d))}
-.rb.big svg{width:26px;height:26px}
-.rb.ol svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
-.rb:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.panel{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding:14px 4px 2px;margin-top:16px}
+.transport{display:flex;align-items:center;gap:10px}
+.rb{width:46px;height:46px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;color:var(--ink);background:var(--glass);transition:background .2s,border-color .2s,transform .1s}
+.rb:hover{background:var(--glass2);border-color:rgba(255,255,255,.26)}
+.rb svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rb.big{width:58px;height:58px;border:0;color:#05060a;background:var(--grad);box-shadow:0 10px 30px -10px rgba(139,108,255,.8)}
+.rb.big svg{width:24px;height:24px;fill:currentColor;stroke:none}
+.rb:active{transform:scale(.94)}
 .vol{display:flex;align-items:center;gap:6px}
-.kwrap{position:relative;width:74px;height:74px;display:grid;place-items:center}
-.kwrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-.knob{--a:0deg;width:56px;height:56px;border-radius:50%;touch-action:none;cursor:grab;position:relative;
- background:repeating-conic-gradient(from 0deg,rgba(0,0,0,.18) 0 4deg,rgba(255,255,255,.08) 4deg 8deg),radial-gradient(circle at 35% 30%,var(--brass-l),var(--brass) 55%,var(--brass-d));
- box-shadow:0 3px 0 rgba(0,0,0,.4),inset 0 -3px 5px rgba(0,0,0,.25);transform:rotate(var(--a))}
-.knob::after{content:"";position:absolute;left:50%;top:3px;width:4px;height:9px;margin-left:-2px;border-radius:2px;background:var(--wal2)}
-.vstep{width:44px;height:44px;border:1px solid rgba(240,228,200,.28);border-radius:50%;background:none;color:var(--ivory);display:grid;place-items:center}
-.vstep svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
-.vstep:active{background:rgba(240,228,200,.15)}
-.kcap{position:absolute;left:50%;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;pointer-events:none;display:grid;place-items:center;
- background:radial-gradient(circle at 40% 35%,#4a3324,#2c1e14);box-shadow:0 1px 0 rgba(255,255,255,.15),inset 0 1px 3px rgba(0,0,0,.6);
- color:var(--ivory);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.kcap.muted{color:var(--brass-l);font-size:10px}
+/* 볼륨: 빛 고리 다이얼 */
+.kwrap{--v:.7;position:relative;width:72px;height:72px;display:grid;place-items:center}
+.kwrap::before{content:"";position:absolute;inset:0;border-radius:50%;
+ background:conic-gradient(from 225deg,var(--a1) 0deg,var(--a2) calc(var(--v)*270deg),rgba(255,255,255,.1) calc(var(--v)*270deg) 270deg,transparent 270deg);
+ -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px));mask:radial-gradient(farthest-side,transparent calc(100% - 5px),#000 calc(100% - 4px))}
+.kwrap svg{display:none}
+.knob{--a:0deg;width:54px;height:54px;border-radius:50%;touch-action:none;cursor:grab;position:relative;background:radial-gradient(circle at 35% 30%,#2a2e3e,#12141d 70%);
+ border:1px solid var(--line2);box-shadow:0 8px 20px -8px rgba(0,0,0,.8);transform:rotate(var(--a))}
+.knob::after{content:"";position:absolute;left:50%;top:5px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--a2);box-shadow:0 0 8px var(--a2)}
+.knob:active{cursor:grabbing}
+.vstep{width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:none;color:var(--mute);display:grid;place-items:center}
+.vstep:hover{color:var(--ink);border-color:var(--line2)}
+.vstep svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.kcap{position:absolute;left:50%;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;pointer-events:none;display:grid;place-items:center;
+ font:600 13px var(--mono);color:var(--ink);letter-spacing:-.02em}
+.kcap.muted{color:var(--a3);font:700 10px "Pretendard Variable",system-ui}
 /* 도구줄 */
-.tools{max-width:880px;margin:12px auto 0;display:flex;gap:10px;align-items:stretch}
-.segs{flex:1;display:flex;border:1.5px solid light-dark(var(--wal),#6b5440);border-radius:12px}
-.segs>:first-child{border-radius:10px 0 0 10px}.segs>:last-child{border-radius:0 10px 10px 0}
-.segl{flex:none;display:flex;align-items:center;padding:0 10px 0 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid var(--line)}
-.seg{flex:1;position:relative;border:0;background:none;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
-.seg svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
-.on-badge{display:none;position:absolute;top:-8px;right:8px;z-index:1;font-style:normal;font-size:9px;line-height:14px;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:99px;background:#ffb347;color:#3a1f05;box-shadow:0 0 8px 1px rgba(255,170,60,.75)}
+.tools{max-width:920px;margin:12px auto 0;display:flex;gap:10px;align-items:stretch}
+.segs{flex:1;display:flex;gap:4px;padding:4px;border-radius:16px;background:var(--glass);border:1px solid var(--line);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.segl{flex:none;display:flex;align-items:center;gap:6px;padding:0 8px 0 10px;font-size:12.5px;font-weight:600;color:var(--mute)}
+.segl::before{content:"AI";font:800 10px var(--mono);padding:2px 6px;border-radius:99px;background:var(--grad);color:#05060a}
+.seg{flex:1;position:relative;border:0;background:none;min-height:40px;border-radius:12px;font-weight:600;color:var(--mute);white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:7px;transition:background .2s,color .2s}
+.seg:hover{color:var(--ink)}
+.seg svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8}
+.seg[aria-pressed=true]{color:#fff;background:linear-gradient(120deg,rgba(139,108,255,.35),rgba(34,211,238,.22));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.on-badge{display:none;position:absolute;top:-9px;right:8px;z-index:1;font:800 9px/14px var(--mono);font-style:normal;letter-spacing:.06em;padding:1px 7px;border-radius:99px;background:var(--grad);color:#05060a;box-shadow:0 0 14px rgba(34,211,238,.7)}
 .seg.live .on-badge{display:inline-block}
 .tools.capr{margin-top:8px}
-.seg[aria-pressed=true]{background:var(--wal);color:var(--ivory)}
-.slp{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap}
-.slp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
-.slp.on{border-color:var(--brass);background:light-dark(#f3e5c6,#33261a)}
+.slp,.pwr{position:relative;flex:none;display:flex;align-items:center;gap:7px;padding:0 16px;border:1px solid var(--line);border-radius:16px;min-height:50px;font-weight:600;color:var(--mute);white-space:nowrap;background:var(--glass)}
+.slp:hover,.pwr:hover{color:var(--ink);border-color:var(--line2)}
+.slp svg,.pwr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.slp.on{color:var(--ink);border-color:transparent;background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box}
 .slp select{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer;font-size:16px}
-.slp:focus-within{outline:3px solid #2f7cf6;outline-offset:2px}
-.pwr{flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;min-height:44px;font-weight:700;background:none;color:var(--mute);white-space:nowrap}
-.pwr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
-.pwr.live{color:#fff;background:#8c2f1f;border-color:#8c2f1f;box-shadow:0 2px 0 #5c1d12}
-.pwr.live:active{transform:translateY(1px);box-shadow:none}
+.slp:focus-within{outline:2px solid var(--a2);outline-offset:3px}
+.pwr.live{color:#fff;border-color:transparent;background:linear-gradient(120deg,#f43f5e,#f472b6);box-shadow:0 8px 24px -10px rgba(244,63,94,.8)}
+.pwr.live:active{transform:scale(.97)}
 /* 분류 */
-.chips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:14px}
-.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:0 4px;min-height:40px;font-size:15px;white-space:nowrap}
-.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-/* 채널 카드 */
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 10px;padding-bottom:6px}
-.st{position:relative;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;border-radius:16px;padding:10px 30px 11px;min-height:62px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;background:linear-gradient(light-dark(#fffaf0,#2b221a),light-dark(#efe3cc,#1d1711));border:1px solid light-dark(#d3bf9a,#4a3b2c);box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.08)),inset 0 -3px 0 light-dark(rgba(120,90,50,.10),rgba(0,0,0,.25)),0 5px 0 light-dark(#c9b28a,#0a0806),0 8px 12px -6px rgba(50,30,10,.45);transition:transform .07s,box-shadow .07s}
-.st:active{transform:translateY(4px);box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.06)),0 1px 0 light-dark(#c9b28a,#0a0806),0 2px 4px -2px rgba(50,30,10,.4)}
-.st:hover{border-color:var(--brass)}
-.st.cur{border-color:#2a1c12;background:linear-gradient(#3f2b1e,#4b3423);color:var(--ivory);transform:translateY(4px);box-shadow:inset 0 3px 6px rgba(0,0,0,.45),0 1px 0 #1d140d,0 0 0 2px var(--brass)}
-.st.cur span{color:#d9c9a6}.st.cur .fav{color:#d9c9a6}.st.cur .fav.on{color:var(--brass-l)}
-.st b{display:block;width:100%;font-size:18px;line-height:1.25;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.st span{font-size:13px;color:var(--mute);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-.st .cc{font-style:normal;font-size:9.5px;font-weight:800;line-height:13px;padding:0 3px;border-radius:3px;border:1px solid currentColor;color:var(--brass-d);letter-spacing:.03em;margin-right:4px;vertical-align:1px}
-.st.cur .cc{color:var(--brass-l)}
-.fav{position:absolute;right:0;top:0;width:30px;height:30px;font-size:15px;border:0;background:none;border-radius:10px;color:var(--mute);line-height:1}
-.fav.on{color:light-dark(var(--brass-d),var(--brass))}
+.chips{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--glass);border-radius:99px;padding:0 16px;min-height:38px;font-size:14.5px;font-weight:500;color:var(--mute);white-space:nowrap;transition:color .2s,border-color .2s}
+.chip:hover{color:var(--ink);border-color:var(--line2)}
+.chip[aria-pressed=true]{color:var(--ink);border-color:transparent;background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box;font-weight:600}
+/* 채널 타일 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:10px;padding-bottom:6px}
+.st{position:relative;cursor:pointer;user-select:none;-webkit-user-select:none;border-radius:18px;padding:13px 15px 13px;min-height:86px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;
+ background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1px solid var(--line);transition:transform .18s,border-color .2s,background .2s}
+.st:hover{transform:translateY(-2px);border-color:var(--line2);background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03))}
+.st:active{transform:scale(.98)}
+.st .no{position:absolute;left:15px;top:11px;font:600 11.5px var(--mono);color:var(--dim);letter-spacing:.02em}
+.st .cc{position:absolute;right:11px;top:10px;font:700 10px/16px "Pretendard Variable",system-ui;font-style:normal;padding:0 7px;border-radius:99px;color:#cfd7ff;
+ background:linear-gradient(var(--bg2),var(--bg2)) padding-box,var(--grad) border-box;border:1px solid transparent;letter-spacing:0}
+.st b{display:block;width:100%;font-size:17px;font-weight:700;line-height:1.25;letter-spacing:-.025em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:18px}
+.st .d{font-size:12.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st.cur{border-color:transparent;background:linear-gradient(160deg,rgba(139,108,255,.26),rgba(34,211,238,.1)) padding-box,linear-gradient(#0c0d16,#0c0d16) padding-box,var(--grad) border-box;box-shadow:0 14px 40px -18px rgba(139,108,255,.8)}
+.st.cur .no{color:var(--ink)}
+.st.cur .no::after{content:" ● LIVE";color:var(--a2);font-weight:700}
 .empty{color:var(--mute);padding:20px 0}
-/* 아래 설정 */
-h2{font-size:20px;margin:0 0 6px}
-.lead{color:var(--mute);margin:0 0 14px;max-width:70ch;font-size:15px}
-.box{border-top:2px solid var(--wal);padding-top:16px}
+/* 세계 채널 찾기 */
+h2{font-size:19px;margin:0 0 6px;letter-spacing:-.02em}
+.lead{color:var(--mute);margin:0 0 14px;max-width:70ch;font-size:14.5px}
+.box{border-radius:24px;padding:22px;background:var(--glass);border:1px solid var(--line)}
 .field{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.field input{flex:1 1 180px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;background:var(--card);font-size:16px}
-.btn{border:0;border-radius:10px;padding:10px 18px;min-height:44px;background:var(--wal);color:var(--ivory);font-weight:600}
+.field input{flex:1 1 180px;border:1px solid var(--line2);border-radius:14px;padding:10px 14px;min-height:46px;background:rgba(0,0,0,.35);font-size:16px}
+.field input:focus{outline:none;border-color:var(--a1);box-shadow:0 0 0 3px rgba(139,108,255,.25)}
+.btn{border:0;border-radius:14px;padding:10px 22px;min-height:46px;background:var(--grad);color:#05060a;font-weight:700}
 .res{list-style:none;padding:0;margin:0;max-height:360px;overflow:auto}
-.res li{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0}
+.res li{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:8px 0}
 .res li div{flex:1}
-.res small{color:var(--mute);display:block;font-size:13px}
-.res button{min-height:40px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card)}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--wal);color:var(--ivory);padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;z-index:9}
-.toast.show{opacity:1}
-footer{color:var(--mute);font-size:13px}
-body.screenmode{background:#000;overflow:hidden}
+.res small{color:var(--mute);display:block;font-size:12.5px}
+.res button{min-height:38px;padding:6px 14px;border-radius:10px;border:1px solid var(--line2);background:var(--glass)}
+.res button:hover{border-color:var(--a1)}
+.toast{position:fixed;left:50%;bottom:22px;transform:translate(-50%,8px);background:rgba(16,18,28,.82);border:1px solid var(--line2);color:var(--ink);padding:10px 18px;border-radius:14px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;max-width:90vw;z-index:9;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+footer{color:var(--dim);font-size:12.5px}
+/* PC TV 화면 모드: 화면만 창 가득 */
+body.screenmode{background:#000;overflow:hidden}body.screenmode::before,body.screenmode::after{display:none}
 .screenmode .band:not(#player),.screenmode footer,.screenmode .top,.screenmode .now,.screenmode .panel,.screenmode .tools{display:none}
-.screenmode #player{padding:0}.screenmode .cab{padding:0;border-radius:0;background:#000;box-shadow:none}
-.screenmode .scr{position:fixed;inset:0;aspect-ratio:auto;border-radius:0;box-shadow:none}.screenmode .scr::after{display:none}
-.screenmode .off{font-size:clamp(16px,2.2vw,30px);line-height:1.6}.screenmode .off b{display:block;font-size:2.4em;color:#cdb88f;font-variant-numeric:tabular-nums}
+.screenmode #player{padding:0}.screenmode .cab{padding:0;border:0;border-radius:0;background:#000;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.screenmode .scr{position:fixed;inset:0;aspect-ratio:auto;border-radius:0;box-shadow:none}
+.screenmode .off{font-size:clamp(16px,2vw,28px);line-height:1.7}.screenmode .off b{display:block;font:300 4.4em/1.1 "Pretendard Variable",system-ui;letter-spacing:-.04em;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:.2em}
 .screenmode.idle{cursor:none}
+@media(prefers-reduced-motion:reduce){body::before,body::after,.playing .lamp::before{animation:none}}
 @media(max-width:600px){
- .now{margin-top:14px}.panel{gap:6px;padding-top:10px}.transport{gap:6px}
+ .cab{border-radius:24px}.scr{border-radius:16px}.now{margin-top:14px}.panel{gap:6px;padding-top:12px}.transport{gap:6px}
  .rb{width:40px;height:40px}.rb.big{width:52px;height:52px}.rb svg{width:18px;height:18px}
- .kwrap{width:62px;height:62px}.knob{width:48px;height:48px}.vstep{width:36px;height:36px}.vstep svg{width:17px;height:17px}.vol{gap:2px}
- .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.st{padding:8px 26px 9px;min-height:58px}.st b{font-size:17px}.st span{font-size:12px}
- .top h1{font-size:18px}.clock{display:none}.inst{min-height:36px;padding:6px 14px;font-size:14px}
- .chips{grid-template-columns:repeat(3,minmax(0,1fr))}.chip{font-size:14px}
- .tools{gap:6px}.seg svg{display:none}.slp,.pwr{padding:0 10px;gap:4px}}
-@media(max-width:380px){.slp span,.pwr span{display:none}.rb:not(.big){width:36px;height:36px}}
+ .kwrap{width:62px;height:62px}.knob{width:46px;height:46px}.vstep{width:34px;height:34px}.vstep svg{width:16px;height:16px}.vol{gap:2px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.st{min-height:80px;padding:11px 12px}.st .no{left:12px}.st b{font-size:16px}
+ .top h1{font-size:17px}.clock{display:none}.inst{min-height:34px;padding:6px 14px;font-size:13.5px}
+ .tools{gap:6px}.seg svg{display:none}.slp,.pwr{padding:0 12px;gap:4px;min-height:48px}.segl{padding:0 4px 0 6px}.segl span{display:none}}
+@media(max-width:380px){.slp span,.pwr span{display:none}.rb:not(.big){width:34px;height:34px}.vstep{width:32px;height:32px}.transport{gap:5px}}
 </style>
 </head>
 <body>
 <section class="band" id="player" style="padding-bottom:8px">
- <div class="top"><h1>나만의 TV</h1><div class="tr"><span class="clock" id="clock"></span><button class="inst" id="install" hidden>앱으로 설치</button></div></div>
+ <div class="top"><h1><img src="icons/icon.svg?v=2" alt="">나만의 <span class="gt">TV</span></h1><div class="tr"><span class="clock" id="clock"></span><button class="inst" id="install" hidden>앱으로 설치</button></div></div>
  <div class="cab">
   <div class="scr" id="scr">
    <video id="tv" playsinline preload="none"></video>
-   <canvas class="noise" id="noise" width="160" height="90" hidden></canvas>
    <div class="off" id="off">아래 채널을 누르면 바로 켜져요</div>
    <div class="osd" id="osd"></div>
    <div class="busy" id="busy" hidden></div>
@@ -195,18 +215,17 @@ body.screenmode{background:#000;overflow:hidden}
     <div class="now-desc" id="nowDesc">한국 방송과 해외 뉴스를 바로 봐요. 영어 방송엔 자막이 나와요.</div>
     <div class="lamp" id="state" role="status" hidden></div>
    </div>
-   <button class="star" id="favNow" aria-label="즐겨찾기" title="즐겨찾기 (F)"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.8 6.3.6-4.8 4.2 1.4 6.2L12 16.6l-5.5 3.2 1.4-6.2-4.8-4.2 6.3-.6z" stroke-linejoin="round"/></svg></button>
   </div>
   <div class="panel">
    <div class="transport">
-    <button class="rb" id="next" aria-label="다음 채널" title="다음 채널 (→)"><svg viewBox="0 0 24 24"><path d="M12 6l7 10H5z"/></svg></button>
+    <button class="rb" id="next" aria-label="다음 채널" title="다음 채널 (→)"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg></button>
     <button class="rb big" id="play" aria-label="켜기/끄기" title="켜기/끄기 (Space)"><svg viewBox="0 0 24 24" id="playIco"><path d="M7 4v16l13-8z"/></svg></button>
-    <button class="rb" id="prev" aria-label="이전 채널" title="이전 채널 (←)"><svg viewBox="0 0 24 24"><path d="M12 18l7-10H5z"/></svg></button>
+    <button class="rb" id="prev" aria-label="이전 채널" title="이전 채널 (←)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     <button class="rb ol" id="full" aria-label="전체 화면" title="전체 화면 (Enter·더블클릭)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
    </div>
    <div class="vol">
     <button class="vstep" id="volDown" aria-label="소리 줄이기"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
-    <div class="kwrap"><svg id="kticks" viewBox="0 0 86 86" aria-hidden="true"></svg>
+    <div class="kwrap">
      <div class="knob" id="knob" role="slider" tabindex="0" aria-label="볼륨: 돌리기, 누르면 음소거" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" title="돌리면 볼륨, 누르면 음소거"></div>
      <output class="kcap" id="volOut" aria-hidden="true">70</output></div>
     <button class="vstep" id="volUp" aria-label="소리 키우기"><svg viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"/></svg></button>
@@ -224,7 +243,7 @@ body.screenmode{background:#000;overflow:hidden}
  </div>
  <div class="tools capr">
   <div class="segs" role="group" aria-label="영어 방송 자막">
-   <span class="segl">영어 자막</span>
+   <span class="segl"><span>영어 자막</span></span>
    <button class="seg" data-cap="off" aria-pressed="false">끔</button>
    <button class="seg" data-cap="en" aria-pressed="true">영어</button>
    <button class="seg" data-cap="ko" aria-pressed="false">영어+한글</button>
@@ -242,12 +261,12 @@ body.screenmode{background:#000;overflow:hidden}
 <section class="band" style="padding-top:8px">
  <div class="wrap box">
   <h2>전 세계 채널 찾기</h2>
-  <p class="lead">공개된 인터넷 TV 채널 수천 개에서 이름으로 찾아요. ＋를 누르면 즐겨찾기에 들어갑니다. 예: news, NHK, music, Korea</p>
+  <p class="lead">공개된 인터넷 TV 채널 수천 개에서 이름으로 찾아요. ＋를 누르면 '내 채널'에 들어갑니다 (지우기: 카드를 길게 누르거나 오른쪽 클릭). 예: news, NHK, music, Korea</p>
   <form class="field" id="wForm"><input id="wq" placeholder="채널 이름" aria-label="세계 채널 검색어"><button class="btn">검색</button></form>
   <ul class="res" id="wRes"></ul>
  </div>
 </section>
-<footer class="band wrap">방송사가 주소를 바꾸거나 해외에서 막으면 일부 채널이 안 나올 수 있어요. CC 표시 채널은 영어 자막이 나와요 (인공지능 받아쓰기라 조금씩 틀릴 수 있어요).</footer>
+<footer class="band wrap">방송사가 주소를 바꾸거나 해외에서 막으면 일부 채널이 안 나올 수 있어요. 'AI 자막' 표시 채널은 영어 자막이 나와요 (인공지능 받아쓰기라 조금씩 틀릴 수 있어요).</footer>
 <div class="toast" id="toast" role="status"></div>
 
 <script>
@@ -303,7 +322,6 @@ if(!pcCode){try{const r=JSON.parse(localStorage.getItem('radio.pcCode')||'""');i
 if(screenMode){out='phone';const h=location.hash.slice(1);if(CODE_RE.test(h)){pcCode=h;save('screenCode',h);history.replaceState(null,'',location.pathname+location.search)}else pcCode=load('screenCode','')}
 const ntfyPost=(topic,m)=>fetch(`${NTFY}/${pcCode}-${topic}`,{method:'POST',body:JSON.stringify(m)});
 const pcSend=m=>ntfyPost('tv',m).catch(()=>toast('인터넷 연결을 확인해 주세요'));
-let favs=load('favs',['kbs1','kbs2','arirang','cbsn']);
 let mine=load('mine',[]);
 let cat='all';
 let cur=null,playing=false,hls=null,retry=0,want=false;
@@ -314,15 +332,14 @@ const chNo=s=>all().indexOf(s)+1;
 
 // 목록
 const CATS=[['all','전체'],['kr','한국'],['en','해외'],['gen','종합·예능'],['news','뉴스'],['edu','교양']];
-const listNow=()=>{let l=favs.map(byId).filter(Boolean).concat(all().filter(s=>!favs.includes(s.id)));
+const listNow=()=>{let l=all();
  if(cat==='kr'||cat==='en')l=l.filter(s=>s.g===cat);else if(cat==='mine')l=l.filter(s=>s.g==='mine');else if(cat!=='all')l=l.filter(s=>s.c===cat);
  return l};
 const render=()=>{
- $('#chips').innerHTML=CATS.map(([k,v])=>`<button class="chip" data-cat="${k}" aria-pressed="${cat===k}">${v}</button>`).join('');
+ $('#chips').innerHTML=CATS.concat(mine.length?[['mine','내 채널']]:[]).map(([k,v])=>`<button class="chip" data-cat="${k}" aria-pressed="${cat===k}">${v}</button>`).join('');
  const l=listNow();
- $('#grid').innerHTML=l.length?l.map(s=>{const f=favs.includes(s.id);return `<div class="st${cur&&cur.id===s.id?' cur':''}" role="button" tabindex="0" data-id="${esc(s.id)}"><b>${esc(s.n)}</b><span>${s.cap?'<i class="cc" title="영어 자막">CC</i>':''}${chNo(s)} · ${esc(s.d||'')}</span><button class="fav${f?' on':''}" data-fav="${esc(s.id)}" aria-label="즐겨찾기">${f?'★':'☆'}</button></div>`}).join('')
+ $('#grid').innerHTML=l.length?l.map(s=>`<div class="st${cur&&cur.id===s.id?' cur':''}" role="button" tabindex="0" data-id="${esc(s.id)}"><span class="no">${String(chNo(s)).padStart(2,'0')}</span>${s.cap?'<i class="cc" title="인공지능 영어 자막">AI 자막</i>':''}<b>${esc(s.n)}</b><span class="d">${esc(s.d||'')}</span></div>`).join('')
  :'<div class="empty">맞는 채널이 없어요.</div>';
- $('#favNow').classList.toggle('on',!!cur&&favs.includes(cur.id));
  fitNames()};
 const fitNames=()=>document.querySelectorAll('.st b').forEach(b=>{b.style.fontSize='';let s=parseFloat(getComputedStyle(b).fontSize);
  while(b.scrollWidth>b.clientWidth+1&&s>12){s-=.5;b.style.fontSize=s+'px'}});
@@ -330,12 +347,10 @@ let fitT;new ResizeObserver(()=>{clearTimeout(fitT);fitT=setTimeout(fitNames,100
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitNames);
 document.addEventListener('click',e=>{
  const c=e.target.closest('[data-cat]');if(c){cat=c.dataset.cat;render();return}
- const f=e.target.closest('[data-fav]');if(f){toggleFav(f.dataset.fav);return}
  const s=e.target.closest('.st');if(s){const st=byId(s.dataset.id);if(cur&&cur.id===st.id&&playing)stop();else play(st);
   if(matchMedia('(max-width:600px)').matches)$('#scr').scrollIntoView({behavior:'smooth',block:'start'})}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('st'))e.target.click()});
-const toggleFav=id=>{const i=favs.indexOf(id);if(i>-1)favs.splice(i,1);else favs.push(id);save('favs',favs);render();toast(i>-1?'즐겨찾기에서 뺐어요':'즐겨찾기에 넣었어요')};
 
 // 주소 풀기: KBS는 볼 때마다 새 주소(시간 제한 토큰)를 받아 옴
 const resolve=async s=>{
@@ -343,11 +358,9 @@ const resolve=async s=>{
  return s.u};
 
 // 화면: 꺼짐 / 지지직(연결 중) / 방송
-const noise=$('#noise'),nctx=noise.getContext('2d');let noiseT=null;
-const noiseOn=on=>{noise.hidden=!on;if(on&&!noiseT){const img=nctx.createImageData(160,90),d=img.data;
-  noiseT=setInterval(()=>{for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}nctx.putImageData(img,0,0)},60)}
- else if(!on&&noiseT){clearInterval(noiseT);noiseT=null}};
-let osdT;const osd=(t,ms=3500)=>{const o=$('#osd');o.textContent=t;o.classList.add('show');clearTimeout(osdT);if(ms)osdT=setTimeout(()=>o.classList.remove('show'),ms)};
+const noiseOn=on=>$('#scr').classList.toggle('loading',!!on);   // 연결 중: 화면 가운데 빛 고리
+const chOsd=s=>`<i>${String(chNo(s)).padStart(2,'0')}</i>${esc(s.n)}`;
+let osdT;const osd=(t,ms=3500)=>{const o=$('#osd');o.innerHTML=t;o.classList.add('show');clearTimeout(osdT);if(ms)osdT=setTimeout(()=>o.classList.remove('show'),ms)};
 const busy=t=>{$('#busy').textContent=t||'';$('#busy').hidden=!t};
 const setState=t=>{const el=$('#state');el.textContent=t;el.hidden=!t||t==='ON AIR'};
 
@@ -355,7 +368,7 @@ const killHls=()=>{if(hls){hls.destroy();hls=null}capDetach()};
 const play=async(s,isRetry)=>{
  if(!s)return;cur=s;want=true;pwrUi();if(!isRetry){retry=0;s._native=0}
  $('#nowName').innerHTML=`<em>${chNo(s)}</em>${esc(s.n)}`;$('#nowDesc').textContent=s.d||'';
- $('#off').hidden=true;noiseOn(true);osd(`CH ${String(chNo(s)).padStart(2,'0')}  ${s.n}`,0);busy('');
+ $('#off').hidden=true;noiseOn(true);osd(chOsd(s),0);busy('');
  setState('연결 중…');save('last',s.id);render();mediaMeta();
  if(out==='pc'){killHls();tv.pause();noiseOn(false);pcCast(s);return}
  let url;
@@ -385,7 +398,7 @@ const pwrUi=()=>$('#pwrOff').classList.toggle('live',!!(playing||want));
 const setPlaying=v=>{playing=v;$('#player').classList.toggle('playing',v);pwrUi();
  $('#playIco').innerHTML=v?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4v16l13-8z"/>';
  if('mediaSession' in navigator)navigator.mediaSession.playbackState=v?'playing':'paused';wakeUi(v&&out!=='pc');capUi()};
-tv.addEventListener('playing',()=>{retry=0;if(cur)cur._rec=0;setPlaying(true);scrPub('play');setState('ON AIR');noiseOn(false);busy('');osd(`CH ${String(chNo(cur)).padStart(2,'0')}  ${cur.n}`)});
+tv.addEventListener('playing',()=>{retry=0;if(cur)cur._rec=0;setPlaying(true);scrPub('play');setState('ON AIR');noiseOn(false);busy('');osd(chOsd(cur))});
 tv.addEventListener('waiting',()=>want&&busy('버퍼링…'));
 tv.addEventListener('error',()=>{if(!hls)fail()});
 let stallT;tv.addEventListener('stalled',()=>{clearTimeout(stallT);stallT=setTimeout(()=>{if(want&&!tv.paused&&tv.readyState<3)fail()},15000)});
@@ -394,7 +407,6 @@ $('#play').onclick=()=>{if(playing||want)stop();else play(cur||byId(load('last',
 const step=d=>{const l=listNow().length?listNow():all();if(!l.length)return;let i=cur?l.indexOf(cur):-1;
  i=i<0?(d>0?0:l.length-1):(i+d+l.length)%l.length;play(l[i])};
 $('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
-$('#favNow').onclick=()=>cur&&toggleFav(cur.id);
 
 // 전체 화면: 화면 상자째로 (자막도 같이 크게). 아이폰은 동영상만 전체 화면이 됨
 const fullscreen=()=>{const el=$('#scr');
@@ -403,15 +415,13 @@ const fullscreen=()=>{const el=$('#scr');
  else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else if(tv.webkitEnterFullscreen)tv.webkitEnterFullscreen()};
 $('#full').onclick=fullscreen;$('#scr').addEventListener('dblclick',fullscreen);
 
-// 볼륨: 황동 노브 (돌리기·휠·−/+·↑↓), 가운데 누르면 음소거
+// 볼륨: 빛 고리 다이얼 (돌리기·휠·−/+·↑↓), 가운데 누르면 음소거
 const knob=$('#knob');let vol=70,muted=false;
 const volIco=()=>{$('#volOut').textContent=muted?'무음':vol;$('#volOut').classList.toggle('muted',muted);
- knob.style.setProperty('--a',`${-135+270*vol/100}deg`);knob.setAttribute('aria-valuenow',vol);knob.setAttribute('aria-valuetext',muted?'무음':`${vol}%`)};
+ knob.style.setProperty('--a',`${-135+270*vol/100}deg`);knob.parentNode.style.setProperty('--v',vol/100);knob.setAttribute('aria-valuenow',vol);knob.setAttribute('aria-valuetext',muted?'무음':`${vol}%`)};
 let volT;
 const setVol=(v,quiet)=>{vol=Math.round(Math.max(0,Math.min(100,v)));tv.volume=(vol/100)**2;if(!screenMode)save('vol',vol);if(vol>0&&muted){muted=false;tv.muted=false}volIco();
  if(out==='pc'&&pcCode&&!quiet){clearTimeout(volT);volT=setTimeout(()=>pcSend({a:'vol',v:vol}),400)}};
-$('#kticks').innerHTML=Array.from({length:11},(_,i)=>{const a=(-225+27*i)*Math.PI/180,r1=42,r2=i%5?38:36;
- return `<line x1="${43+r1*Math.cos(a)}" y1="${43+r1*Math.sin(a)}" x2="${43+r2*Math.cos(a)}" y2="${43+r2*Math.sin(a)}" stroke="#d9c9a6" stroke-width="${i%5?1.5:2.5}" stroke-linecap="round"/>`}).join('');
 let drag=null;
 const kAng=e=>{const r=knob.getBoundingClientRect();return Math.atan2(e.clientY-r.top-r.height/2,e.clientX-r.left-r.width/2)*180/Math.PI};
 knob.addEventListener('pointerdown',e=>{e.preventDefault();knob.setPointerCapture(e.pointerId);drag={a:kAng(e),v:vol,moved:0,x:e.clientX,y:e.clientY};knob.focus()});
@@ -425,7 +435,7 @@ $('#volDown').onclick=()=>setVol(vol-5);$('#volUp').onclick=()=>setVol(vol+5);
 const toggleMute=()=>{muted=!muted;tv.muted=muted;volIco();if(out==='pc'&&pcCode)pcSend({a:'vol',v:muted?0:vol})};
 setVol(load('vol',70));
 
-// 단축키: Space 켜기/끄기, ←→ 채널, ↑↓ 볼륨, 숫자 채널 번호, Enter 전체 화면, M 음소거, F 즐겨찾기, C 자막
+// 단축키: Space 켜기/끄기, ←→ 채널, ↑↓ 볼륨, 숫자 채널 번호, Enter 전체 화면, M 음소거, C 자막
 let numBuf='',numT;
 document.addEventListener('keydown',e=>{
  if(e.target.matches('input,select,textarea')){if(e.key==='Escape')e.target.blur();return}
@@ -436,10 +446,9 @@ document.addEventListener('keydown',e=>{
  else if(k==='ArrowUp'){e.preventDefault();setVol(vol+5)}else if(k==='ArrowDown'){e.preventDefault();setVol(vol-5)}
  else if(k==='Enter'&&!(e.target.classList&&e.target.classList.contains('st'))&&e.target.tagName!=='BUTTON')fullscreen();
  else if(k==='m'||k==='M'||k==='ㅡ')toggleMute();
- else if(k==='f'||k==='F'||k==='ㄹ')$('#favNow').click();
  else if(k==='c'||k==='C'||k==='ㅊ')setCap({off:'en',en:'ko',ko:'off'}[capMode]);
- else if(/^[0-9]$/.test(k)){numBuf+=k;osd(`CH ${numBuf.padStart(2,'-')}`,0);clearTimeout(numT);
-  numT=setTimeout(()=>{const s=all()[+numBuf-1];numBuf='';if(s)play(s);else{osd('없는 채널',1500)}},numBuf.length>=2?100:1300)}
+ else if(/^[0-9]$/.test(k)){numBuf+=k;osd(`<i>${numBuf.padStart(2,'-')}</i>채널 번호`,0);clearTimeout(numT);
+  numT=setTimeout(()=>{const s=all()[+numBuf-1];numBuf='';if(s)play(s);else{osd('<i>--</i>없는 채널',1500)}},numBuf.length>=2?100:1300)}
 });
 
 // 미디어 키
@@ -478,7 +487,7 @@ let capMode=load('capMode','en');
 const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
 const capWant=()=>!!(cur&&cur.cap&&capMode!=='off'&&out!=='pc');
 const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
-const capReset=()=>{CAP.run++;CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
+const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;$('#sub').classList.remove('hush');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
  $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
 const capDetach=()=>{CAP.run++};
 const boxType=u=>u.length>8?String.fromCharCode(u[4],u[5],u[6],u[7]):'';
@@ -535,14 +544,22 @@ const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEA
  // 3초 넘게 말이 없으면(광고·음악) 자막을 비움
  const lastEnd=CAP.segs.filter(g=>g.start<=t).reduce((a,g)=>Math.max(a,g.end),0);const quiet=lastEnd&&t-lastEnd>3;
  const key=w.length+':'+quiet;if(key===CAP.shown||!w.length)return;CAP.shown=key;
- const el=$('#subEn'),box=$('#subx');
- if(quiet){el.innerHTML='';$('#subKo').innerHTML='';return}
- el.innerHTML=`<span class="l">${esc(w.slice(-50).join(' '))}</span>`;
- const lh=box.clientHeight/(capMode==='ko'?1:2),top=Math.max(0,el.offsetHeight-box.clientHeight);
- if(Math.abs(top-capLine)>2){capLine=top;box.scrollTo({top,behavior:'smooth'})}
+ const el=$('#subEn'),box=$('#subx'),sub=$('#sub');
+ // 말이 멈추면 자막을 천천히 지움 (다음 말이 오면 이어서 다시 나타남)
+ if(quiet){sub.classList.add('hush');return}sub.classList.remove('hush');
+ const d=CAP.dom||[],have=CAP.base+d.length;let jump=false;
+ const same=w.length>=have&&d.every((x,i)=>w[CAP.base+i]===x);
+ if(!same||!el.querySelector('.w')||d.length>90){   // 처음이거나 앞 글이 바뀜: 최근 30단어로 새로 그림
+  CAP.base=Math.max(0,w.length-30);CAP.dom=w.slice(CAP.base);jump=true;
+  el.innerHTML=CAP.dom.map(x=>`<span class="w">${esc(x)} </span>`).join('')}
+ else if(w.length>have){const add=w.slice(have);CAP.dom=d.concat(add);
+  el.insertAdjacentHTML('beforeend',add.map(x=>`<span class="w nw">${esc(x)} </span>`).join(''))}
+ // 지금 줄이 맨 아래에 오게: 줄이 바뀔 때만 부드럽게 한 줄 밀어 올림
+ const top=Math.max(0,el.offsetHeight-box.clientHeight);
+ if(jump){capLine=top;box.scrollTop=top}else if(Math.abs(top-capLine)>2){capLine=top;box.scrollTo({top,behavior:'smooth'})}
  if(capMode==='ko'){const text=w.join(' '),m=text.match(/[^.?!]+[.?!]+(?=\s|$)/g),sent=m&&m[m.length-1].trim();
   if(sent&&sent!==CAP.lastSent){CAP.lastSent=sent;const run=CAP.run;
-   fetch(`${WORKER}/translate?text=${encodeURIComponent(sent)}`).then(r=>r.json()).then(j=>{if(run===CAP.run&&j.ko)$('#subKo').innerHTML=`<span>${esc(j.ko)}</span>`}).catch(()=>{})}}};
+   fetch(`${WORKER}/translate?text=${encodeURIComponent(sent)}`).then(r=>r.json()).then(j=>{if(run===CAP.run&&j.ko)$('#subKo').innerHTML=`<span class="nw">${esc(j.ko)}</span>`}).catch(()=>{})}}};
 const capUi=()=>{const show=capWant()&&(playing||want);$('#sub').hidden=!show;$('#sub').classList.toggle('ko',capMode==='ko');
  document.querySelectorAll('[data-cap]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.cap===capMode));
  if(show&&!capT)capT=setInterval(capTick,150);else if(!show&&capT){clearInterval(capT);capT=null}};
@@ -564,13 +581,13 @@ $('#wForm').onsubmit=async e=>{e.preventDefault();const w=$('#wq').value.trim().
   ul.innerHTML=wList.length?wList.map((s,i)=>{const cc=(s.id.split('.')[1]||'').split('@')[0].toUpperCase();return `<li><div><b>${esc(s.name)}</b><small>${esc([cc,s.gr].filter(Boolean).join(' · '))}</small></div><button data-wp="${i}">보기</button><button data-wa="${i}" aria-label="내 채널에 추가">＋</button></li>`}).join(''):'<li>결과가 없어요. 영어 이름으로도 찾아보세요.</li>'}
  catch(err){ul.innerHTML='<li>목록 서버에 연결하지 못했어요.</li>'}};
 const fromW=s=>({id:'w_'+(s.id||s.name).replace(/\W+/g,'_')+'_'+s.u.length,n:s.name.replace(/\s*\(\d+p\)|\s*\[.*?\]/g,'').trim().slice(0,60),g:'mine',c:/news/i.test(s.gr)?'news':/educ|docum|kids|science/i.test(s.gr)?'edu':'gen',d:[(s.id.split('.')[1]||'').split('@')[0].toUpperCase(),s.gr].filter(Boolean).join(' · ')||'내 채널',u:s.u});
-const addMine=s=>{if(!mine.find(m=>m.id===s.id)){mine.push(s);save('mine',mine)}if(!favs.includes(s.id)){favs.push(s.id);save('favs',favs)}render();toast(`"${s.n}" 을(를) 즐겨찾기에 넣었어요`)};
+const addMine=s=>{if(!mine.find(m=>m.id===s.id)){mine.push(s);save('mine',mine)}render();toast(`"${s.n}" 을(를) 내 채널에 넣었어요`)};
 $('#wRes').addEventListener('click',e=>{const p=e.target.closest('[data-wp]'),a=e.target.closest('[data-wa]');
  if(p){const s=fromW(wList[+p.dataset.wp]);if(!byId(s.id)){mine.push(s);save('mine',mine)}play(byId(s.id));$('#scr').scrollIntoView({behavior:'smooth',block:'start'})}
  if(a)addMine(fromW(wList[+a.dataset.wa]))});
 // 내 채널 지우기: 카드 우클릭(길게 누르기)
 $('#grid').addEventListener('contextmenu',e=>{const s=e.target.closest('.st');if(!s||!/^w_/.test(s.dataset.id))return;e.preventDefault();
- mine=mine.filter(m=>m.id!==s.dataset.id);favs=favs.filter(f=>f!==s.dataset.id);save('mine',mine);save('favs',favs);render();toast('지웠어요')});
+ mine=mine.filter(m=>m.id!==s.dataset.id);save('mine',mine);if(!mine.length&&cat==='mine')cat='all';render();toast('지웠어요')});
 
 // ── PC 화면으로 보내기 (폰) ───────────────────────────────
 let es=null,pcWait=null;
