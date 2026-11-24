@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>나만의 TV</title>
+<meta name="description" content="한국 TV와 해외 영어 뉴스 채널을 한 화면에서 바로 보는 TV. 영어 방송은 실시간 2줄 자막">
+<meta name="theme-color" content="#3d2a1d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg?v=1" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TV">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+<style>
+/* VOICE: 나만의 라디오의 짝 — 거실에 놓인 호두나무 브라운관 TV. 따뜻하고 단정함
+   IDEA: 호두나무 캐비닛 안에 둥근 모서리 브라운관, 황동 테두리. 켜면 화면에 불이 들어오고, 채널 바꿀 땐 지지직
+   COLOUR and TYPE: 호두 #3d2a1d, 상아 #f0e4c8, 황동 #c49a4a; 바탕은 바랜 종이 #f2ebdf; IBM Plex Sans KR (라디오와 같음)
+   LAYOUT: 머리줄 → 캐비닛(화면·방송 이름·조작부) → 자막·취침·끄기 도구줄 → 분류 → 채널 그리드 → 세계 채널 찾기 */
+:root{color-scheme:light dark;
+ --bg:light-dark(#f2ebdf,#15110d);--ink:light-dark(#2a1f17,#f1e6d2);--mute:light-dark(#76665a,#a8977f);
+ --line:light-dark(#dccfba,#3a2f25);--card:light-dark(#fbf7ef,#211a14);
+ --wal:#3d2a1d;--wal2:#2c1e14;--ivory:#f0e4c8;--brass:#c49a4a;--brass-l:#e8cd8e;--brass-d:#7f5b22}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "IBM Plex Sans KR",system-ui,sans-serif;overflow-x:clip}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:3px solid #2f7cf6;outline-offset:2px}
+.band{padding:clamp(16px,3vw,36px) max(4vw,16px)}
+.wrap{max-width:880px;margin:0 auto}
+/* 머리줄 */
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;max-width:880px;margin:0 auto 14px}
+.top h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.01em}
+.tr{display:flex;gap:12px;align-items:center}
+.clock{font-variant-numeric:tabular-nums;color:var(--mute);font-size:14px}
+.inst{background:var(--wal);color:var(--ivory);border:0;border-radius:99px;padding:8px 16px;min-height:40px;font-weight:700}
+.inst[hidden]{display:none}
+/* 캐비닛 */
+.cab{max-width:880px;margin:0 auto;border-radius:22px;padding:clamp(12px,2.4vw,24px);color:var(--ivory);
+ background:linear-gradient(100deg,#47301f 0%,#3a281b 22%,#4b3322 46%,#36251a 70%,#443020 100%);
+ box-shadow:0 1px 0 rgba(255,255,255,.12) inset,0 -8px 18px rgba(0,0,0,.3) inset,0 14px 30px -14px rgba(40,25,10,.55)}
+/* 브라운관 */
+.scr{position:relative;aspect-ratio:16/9;border-radius:26px/22px;overflow:hidden;background:#0b0907;container-type:inline-size;
+ box-shadow:0 0 0 4px var(--brass-d),0 0 0 6px var(--brass),0 0 0 9px #241811,inset 0 0 40px rgba(0,0,0,.9)}
+.scr video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.scr::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+ background:radial-gradient(ellipse at 30% 20%,rgba(255,255,255,.07),transparent 45%),radial-gradient(ellipse at center,transparent 62%,rgba(0,0,0,.45))}
+.scr:fullscreen{border-radius:0;box-shadow:none;aspect-ratio:auto;width:100vw;height:100vh}
+.scr:fullscreen::after{display:none}
+.off{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#8f7c62;font-size:clamp(14px,3cqw,22px);padding:20px;
+ background:radial-gradient(ellipse at center,#1d1813,#0b0907 70%)}
+.off[hidden]{display:none}
+.noise{position:absolute;inset:0;width:100%;height:100%;opacity:.55;image-rendering:pixelated}
+.noise[hidden]{display:none}
+.osd{position:absolute;left:4cqw;top:3.5cqw;font:700 clamp(14px,3.6cqw,34px)/1.1 ui-monospace,Consolas,monospace;color:#7dff8f;
+ text-shadow:0 0 6px rgba(80,255,110,.7),2px 2px 0 rgba(0,0,0,.6);opacity:0;transition:opacity .3s;pointer-events:none;letter-spacing:.02em}
+.osd.show{opacity:1}
+.busy{position:absolute;right:4cqw;top:3.5cqw;font-size:clamp(11px,2cqw,16px);background:rgba(0,0,0,.6);color:var(--ivory);border-radius:99px;padding:2px 12px;pointer-events:none}
+.busy[hidden]{display:none}
+/* 자막: 화면 아래 2줄 */
+.sub{position:absolute;left:6cqw;right:6cqw;bottom:5cqw;text-align:center;pointer-events:none;font-size:clamp(14px,3.3cqw,40px);line-height:1.4}
+.sub[hidden]{display:none}
+.subx{height:2.8em;overflow:hidden}
+.sub span.l{background:rgba(0,0,0,.72);color:#fff;padding:.05em .35em;-webkit-box-decoration-break:clone;box-decoration-break:clone;font-weight:600;border-radius:.2em}
+.sub .wait{background:rgba(0,0,0,.6);color:#d9c9a6;font-size:.7em;padding:.1em .6em;border-radius:.3em}
+.subko{display:none;margin-top:.1em;height:1.4em;overflow:hidden}
+.subko span{background:rgba(0,0,0,.72);color:#ffe08a;padding:.05em .35em;font-weight:600;border-radius:.2em}
+.sub.ko .subx{height:1.4em}.sub.ko .subko{display:block}
+/* 방송 이름 */
+.now{display:flex;gap:10px;align-items:center;margin-top:18px}
+.now-l{flex:1}
+.now-name{font-size:clamp(24px,4vw,38px);line-height:1.1;font-weight:700;text-wrap:balance}
+.now-name em{font-style:normal;color:var(--brass-l);font-variant-numeric:tabular-nums;margin-right:.35em;font-size:.7em;vertical-align:.15em}
+.now-desc{color:#d9c9a6;font-size:15px;min-height:1.5em;margin-top:4px}
+.star{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid rgba(240,228,200,.35);background:none;color:#d9c9a6;display:grid;place-items:center}
+.star svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+.star.on{color:var(--brass-l);border-color:var(--brass)}.star.on svg{fill:currentColor}
+.lamp{display:flex;align-items:center;gap:7px;font-size:13px;color:#d9c9a6;white-space:nowrap;margin-top:6px}
+.lamp[hidden]{display:none}
+.lamp::before{content:"";width:9px;height:9px;border-radius:50%;background:#5a4433;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.playing .lamp::before{background:#ffb347;box-shadow:0 0 8px 2px rgba(255,170,60,.7)}
+/* 조작부 */
+.panel{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid rgba(240,228,200,.16);padding-top:12px;margin-top:14px}
+.transport{display:flex;align-items:center;gap:12px}
+.rb{width:46px;height:46px;border-radius:50%;border:0;display:grid;place-items:center;color:var(--wal2);
+ background:radial-gradient(circle at 35% 30%,#fbf3df,#e2d2ad 70%,#c9b48a);box-shadow:0 2px 0 rgba(0,0,0,.35),inset 0 -2px 3px rgba(0,0,0,.15)}
+.rb svg{width:22px;height:22px;fill:currentColor}
+.rb.big{width:60px;height:60px;background:radial-gradient(circle at 35% 30%,var(--brass-l),var(--brass) 55%,var(--brass-d))}
+.rb.big svg{width:26px;height:26px}
+.rb.ol svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rb:active{transform:translateY(1px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.vol{display:flex;align-items:center;gap:6px}
+.kwrap{position:relative;width:74px;height:74px;display:grid;place-items:center}
+.kwrap svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.knob{--a:0deg;width:56px;height:56px;border-radius:50%;touch-action:none;cursor:grab;position:relative;
+ background:repeating-conic-gradient(from 0deg,rgba(0,0,0,.18) 0 4deg,rgba(255,255,255,.08) 4deg 8deg),radial-gradient(circle at 35% 30%,var(--brass-l),var(--brass) 55%,var(--brass-d));
+ box-shadow:0 3px 0 rgba(0,0,0,.4),inset 0 -3px 5px rgba(0,0,0,.25);transform:rotate(var(--a))}
+.knob::after{content:"";position:absolute;left:50%;top:3px;width:4px;height:9px;margin-left:-2px;border-radius:2px;background:var(--wal2)}
+.vstep{width:44px;height:44px;border:1px solid rgba(240,228,200,.28);border-radius:50%;background:none;color:var(--ivory);display:grid;place-items:center}
+.vstep svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.vstep:active{background:rgba(240,228,200,.15)}
+.kcap{position:absolute;left:50%;top:50%;width:32px;height:32px;margin:-16px 0 0 -16px;border-radius:50%;pointer-events:none;display:grid;place-items:center;
+ background:radial-gradient(circle at 40% 35%,#4a3324,#2c1e14);box-shadow:0 1px 0 rgba(255,255,255,.15),inset 0 1px 3px rgba(0,0,0,.6);
+ color:var(--ivory);font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kcap.muted{color:var(--brass-l);font-size:10px}
+/* 도구줄 */
+.tools{max-width:880px;margin:12px auto 0;display:flex;gap:10px;align-items:stretch}
+.segs{flex:1;display:grid;grid-template-columns:auto 1fr 1fr 1fr;border:1.5px solid light-dark(var(--wal),#6b5440);border-radius:12px;overflow:hidden}
+.segl{display:flex;align-items:center;padding:0 10px 0 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid var(--line)}
+.seg{border:0;background:none;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap}
+.seg[aria-pressed=true]{background:var(--wal);color:var(--ivory)}
+.slp{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap}
+.slp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.slp.on{border-color:var(--brass);background:light-dark(#f3e5c6,#33261a)}
+.slp select{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer;font-size:16px}
+.slp:focus-within{outline:3px solid #2f7cf6;outline-offset:2px}
+.pwr{flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;min-height:44px;font-weight:700;background:none;color:var(--mute);white-space:nowrap}
+.pwr svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2}
+.pwr.live{color:#fff;background:#8c2f1f;border-color:#8c2f1f;box-shadow:0 2px 0 #5c1d12}
+.pwr.live:active{transform:translateY(1px);box-shadow:none}
+/* 분류 */
+.chips{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:99px;padding:0 4px;min-height:40px;font-size:15px;white-space:nowrap}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* 채널 카드 */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px 10px;padding-bottom:6px}
+.st{position:relative;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;border-radius:16px;padding:10px 30px 11px;min-height:62px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1px;background:linear-gradient(light-dark(#fffaf0,#2b221a),light-dark(#efe3cc,#1d1711));border:1px solid light-dark(#d3bf9a,#4a3b2c);box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.08)),inset 0 -3px 0 light-dark(rgba(120,90,50,.10),rgba(0,0,0,.25)),0 5px 0 light-dark(#c9b28a,#0a0806),0 8px 12px -6px rgba(50,30,10,.45);transition:transform .07s,box-shadow .07s}
+.st:active{transform:translateY(4px);box-shadow:inset 0 1px 0 light-dark(#fff,rgba(255,255,255,.06)),0 1px 0 light-dark(#c9b28a,#0a0806),0 2px 4px -2px rgba(50,30,10,.4)}
+.st:hover{border-color:var(--brass)}
+.st.cur{border-color:#2a1c12;background:linear-gradient(#3f2b1e,#4b3423);color:var(--ivory);transform:translateY(4px);box-shadow:inset 0 3px 6px rgba(0,0,0,.45),0 1px 0 #1d140d,0 0 0 2px var(--brass)}
+.st.cur span{color:#d9c9a6}.st.cur .fav{color:#d9c9a6}.st.cur .fav.on{color:var(--brass-l)}
+.st b{display:block;width:100%;font-size:18px;line-height:1.25;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st span{font-size:13px;color:var(--mute);display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.st .cc{font-style:normal;font-size:9.5px;font-weight:800;line-height:13px;padding:0 3px;border-radius:3px;border:1px solid currentColor;color:var(--brass-d);letter-spacing:.03em;margin-right:4px;vertical-align:1px}
+.st.cur .cc{color:var(--brass-l)}
+.fav{position:absolute;right:0;top:0;width:30px;height:30px;font-size:15px;border:0;background:none;border-radius:10px;color:var(--mute);line-height:1}
+.fav.on{color:light-dark(var(--brass-d),var(--brass))}
+.empty{color:var(--mute);padding:20px 0}
+/* 아래 설정 */
+h2{font-size:20px;margin:0 0 6px}
+.lead{color:var(--mute);margin:0 0 14px;max-width:70ch;font-size:15px}
+.box{border-top:2px solid var(--wal);padding-top:16px}
+.field{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.field input{flex:1 1 180px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;background:var(--card);font-size:16px}
+.btn{border:0;border-radius:10px;padding:10px 18px;min-height:44px;background:var(--wal);color:var(--ivory);font-weight:600}
+.res{list-style:none;padding:0;margin:0;max-height:360px;overflow:auto}
+.res li{display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:6px 0}
+.res li div{flex:1}
+.res small{color:var(--mute);display:block;font-size:13px}
+.res button{min-height:40px;padding:6px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--wal);color:var(--ivory);padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;z-index:9}
+.toast.show{opacity:1}
+footer{color:var(--mute);font-size:13px}
+@media(max-width:600px){
+ .now{margin-top:14px}.panel{gap:6px;padding-top:10px}.transport{gap:6px}
+ .rb{width:40px;height:40px}.rb.big{width:52px;height:52px}.rb svg{width:18px;height:18px}
+ .kwrap{width:62px;height:62px}.knob{width:48px;height:48px}.vstep{width:36px;height:36px}.vstep svg{width:17px;height:17px}.vol{gap:2px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.st{padding:8px 26px 9px;min-height:58px}.st b{font-size:17px}.st span{font-size:12px}
+ .top h1{font-size:18px}.clock{display:none}.inst{min-height:36px;padding:6px 14px;font-size:14px}
+ .chips{grid-template-columns:repeat(3,minmax(0,1fr))}.chip{font-size:14px}
+ .tools{gap:6px}.segl{display:none}.segs{grid-template-columns:1fr 1fr 1fr}.slp,.pwr{padding:0 10px;gap:4px}}
+@media(max-width:380px){.slp span,.pwr span{display:none}.rb:not(.big){width:36px;height:36px}}
+</style>
+</head>
+<body>
+<section class="band" id="player" style="padding-bottom:8px">
+ <div class="top"><h1>나만의 TV</h1><div class="tr"><span class="clock" id="clock"></span><button class="inst" id="install" hidden>앱으로 설치</button></div></div>
+ <div class="cab">
+  <div class="scr" id="scr">
+   <video id="tv" playsinline preload="none"></video>
+   <canvas class="noise" id="noise" width="160" height="90" hidden></canvas>
+   <div class="off" id="off">아래 채널을 누르면 바로 켜져요</div>
+   <div class="osd" id="osd"></div>
+   <div class="busy" id="busy" hidden></div>
+   <div class="sub" id="sub" hidden aria-live="off"><div class="subx" id="subx"><div id="subEn"></div></div><div class="subko" id="subKo"></div></div>
+  </div>
+  <div class="now">
+   <div class="now-l">
+    <div class="now-name" id="nowName">채널을 고르세요</div>
+    <div class="now-desc" id="nowDesc">한국 방송과 해외 뉴스를 바로 봐요. 영어 방송엔 자막이 나와요.</div>
+    <div class="lamp" id="state" role="status" hidden></div>
+   </div>
+   <button class="star" id="favNow" aria-label="즐겨찾기" title="즐겨찾기 (F)"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.8 6.3.6-4.8 4.2 1.4 6.2L12 16.6l-5.5 3.2 1.4-6.2-4.8-4.2 6.3-.6z" stroke-linejoin="round"/></svg></button>
+  </div>
+  <div class="panel">
+   <div class="transport">
+    <button class="rb" id="next" aria-label="다음 채널" title="다음 채널 (→)"><svg viewBox="0 0 24 24"><path d="M12 6l7 10H5z"/></svg></button>
+    <button class="rb big" id="play" aria-label="켜기/끄기" title="켜기/끄기 (Space)"><svg viewBox="0 0 24 24" id="playIco"><path d="M7 4v16l13-8z"/></svg></button>
+    <button class="rb" id="prev" aria-label="이전 채널" title="이전 채널 (←)"><svg viewBox="0 0 24 24"><path d="M12 18l7-10H5z"/></svg></button>
+    <button class="rb ol" id="full" aria-label="전체 화면" title="전체 화면 (Enter·더블클릭)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+   </div>
+   <div class="vol">
+    <button class="vstep" id="volDown" aria-label="소리 줄이기"><svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg></button>
+    <div class="kwrap"><svg id="kticks" viewBox="0 0 86 86" aria-hidden="true"></svg>
+     <div class="knob" id="knob" role="slider" tabindex="0" aria-label="볼륨: 돌리기, 누르면 음소거" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70" title="돌리면 볼륨, 누르면 음소거"></div>
+     <output class="kcap" id="volOut" aria-hidden="true">70</output></div>
+    <button class="vstep" id="volUp" aria-label="소리 키우기"><svg viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"/></svg></button>
+   </div>
+  </div>
+ </div>
+ <div class="tools">
+  <div class="segs" role="group" aria-label="영어 방송 자막">
+   <span class="segl">자막</span>
+   <button class="seg" data-cap="off" aria-pressed="false">끔</button>
+   <button class="seg" data-cap="en" aria-pressed="true">영어</button>
+   <button class="seg" data-cap="ko" aria-pressed="false">영어+한글</button>
+  </div>
+  <label class="slp" id="slp"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" stroke-linejoin="round"/></svg><span id="sleepLbl">취침</span>
+   <select id="sleep" aria-label="취침 타이머"><option value="0">취침 타이머 끄기</option><option value="15">15분 뒤 끄기</option><option value="30">30분 뒤 끄기</option><option value="60">1시간 뒤 끄기</option><option value="90">1시간 30분 뒤 끄기</option><option value="120">2시간 뒤 끄기</option></select></label>
+  <button class="pwr" id="pwrOff" aria-label="TV 끄기" title="TV 끄기"><svg viewBox="0 0 24 24"><path d="M12 3v8M7.1 6.2a7.5 7.5 0 109.8 0" stroke-linecap="round"/></svg><span>끄기</span></button>
+ </div>
+</section>
+
+<section class="band" style="padding-top:12px">
+ <div class="wrap">
+  <div class="chips" id="chips" aria-label="분류"></div>
+  <div class="grid" id="grid"></div>
+ </div>
+</section>
+
+<section class="band" style="padding-top:8px">
+ <div class="wrap box">
+  <h2>전 세계 채널 찾기</h2>
+  <p class="lead">공개된 인터넷 TV 채널 수천 개에서 이름으로 찾아요. ＋를 누르면 즐겨찾기에 들어갑니다. 예: news, NHK, music, Korea</p>
+  <form class="field" id="wForm"><input id="wq" placeholder="채널 이름" aria-label="세계 채널 검색어"><button class="btn">검색</button></form>
+  <ul class="res" id="wRes"></ul>
+ </div>
+</section>
+<footer class="band wrap">방송사가 주소를 바꾸거나 해외에서 막으면 일부 채널이 안 나올 수 있어요. CC 표시 채널은 영어 자막이 나와요 (인공지능 받아쓰기라 조금씩 틀릴 수 있어요).</footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+{
+// cap: 영어 방송 → 소리를 받아써 화면에 2줄 자막
+const ST=[
+ // 한국
+ {id:'kbs1',n:'KBS 1TV',g:'kr',c:'gen',d:'종합 · 뉴스·시사·다큐',kbs:'11'},
+ {id:'kbs2',n:'KBS 2TV',g:'kr',c:'gen',d:'드라마·예능',kbs:'12'},
+ {id:'kbs24',n:'KBS 뉴스24',g:'kr',c:'news',d:'24시간 뉴스',kbs:'81'},
+ {id:'kbsworld',n:'KBS WORLD',g:'kr',c:'gen',d:'해외용 · 드라마·예능',kbs:'14'},
+ {id:'kbsstory',n:'KBS Story',g:'kr',c:'gen',d:'드라마·생활',kbs:'N94'},
+ {id:'kbskids',n:'KBS Kids',g:'kr',c:'edu',d:'어린이',kbs:'N96'},
+ {id:'ebs1',n:'EBS 1TV',g:'kr',c:'edu',d:'교육·다큐',u:'https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8'},
+ {id:'ebs2',n:'EBS 2TV',g:'kr',c:'edu',d:'교육',u:'https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8'},
+ {id:'ebsen',n:'EBS English',g:'kr',c:'edu',d:'영어 교육',u:'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8'},
+ {id:'ebsplus1',n:'EBS Plus1',g:'kr',c:'edu',d:'수능 강의',u:'https://ebsonair.ebs.co.kr/plus1familypc/familypc1m/playlist.m3u8'},
+ {id:'ktv',n:'KTV 국민방송',g:'kr',c:'news',d:'정부·국회 소식',u:'https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8'},
+ {id:'gugak',n:'국악TV',g:'kr',c:'edu',d:'국악',u:'https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8'},
+ {id:'tbs',n:'TBS TV',g:'kr',c:'gen',d:'서울',u:'https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8'},
+ // 해외 영어 (자막)
+ {id:'arirang',cap:1,n:'Arirang TV',g:'en',c:'news',d:'한국 · 영어 방송',u:'https://amdlive-ch01-ctnd-com.akamaized.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8'},
+ {id:'nbc',cap:1,n:'NBC News',g:'en',c:'news',d:'미국 · 뉴스',u:'https://d1si3n1st4nkgb.cloudfront.net/10502/88896001/hls/master.m3u8?ads.xumo_channelId=88896001'},
+ {id:'cbsn',cap:1,n:'CBS News',g:'en',c:'news',d:'미국 · 뉴스',u:'https://cbsn-us.cbsnstream.cbsnews.com/out/v1/55a8648e8f134e82a470f83d562deeca/master.m3u8'},
+ {id:'livenow',cap:1,n:'LiveNOW',g:'en',c:'news',d:'미국 FOX · 생중계',u:'https://aka-live1050.delivery.roku.com/eaf7d889-16e0-4c14-a299-a2932df9f467/t2-origin/out/v1/live.m3u8'},
+ {id:'scripps',cap:1,n:'Scripps News',g:'en',c:'news',d:'미국 · 뉴스',u:'https://aka-live1050.delivery.roku.com/a48b72c9-5755-4ede-9dac-9e51e4ca5cc8/t2-origin/out/v1/live.m3u8'},
+ {id:'cbc',cap:1,n:'CBC News',g:'en',c:'news',d:'캐나다 · 뉴스',u:'https://aka-live1050.delivery.roku.com/0c24a9ef-e9c3-485c-bf68-3f1ae5ef3e85/t2-origin/out/v1/live.m3u8'},
+ {id:'gbnews',cap:1,n:'GB News',g:'en',c:'news',d:'영국 · 뉴스·토크',u:'https://amg01076-lightningintern-gbnewsau-samsungau-et7fz.amagi.tv/playlist/amg01076-lightningintern-gbnewsau-samsungau/playlist.m3u8'},
+ {id:'aje',cap:1,n:'Al Jazeera',g:'en',c:'news',d:'카타르 · 세계 뉴스',u:'https://live-hls-apps-aje-fa.getaj.net/AJE/index.m3u8'},
+ {id:'dw',cap:1,n:'DW English',g:'en',c:'news',d:'독일 · 세계 뉴스',u:'https://dwamdstream102.akamaized.net/hls/live/2015525/dwstream102/index.m3u8'},
+ {id:'f24',cap:1,n:'France 24',g:'en',c:'news',d:'프랑스 · 세계 뉴스',u:'https://live.france24.com/hls/live/2037218/F24_EN_HI_HLS/master_5000.m3u8'},
+ {id:'nhk',cap:1,n:'NHK WORLD',g:'en',c:'news',d:'일본 · 영어 방송',u:'https://media-tyo.hls.nhkworld.jp/hls/w/live/master.m3u8'},
+ {id:'cna',cap:1,n:'CNA',g:'en',c:'news',d:'싱가포르 · 아시아 뉴스',u:'https://d2e1asnsl7br7b.cloudfront.net/7782e205e72f43aeb4a48ec97f66ebbe/index.m3u8'},
+ {id:'trt',cap:1,n:'TRT World',g:'en',c:'news',d:'튀르키예 · 세계 뉴스',u:'https://tv-trtworld.medya.trt.com.tr/master.m3u8'},
+ {id:'cgtn',cap:1,n:'CGTN',g:'en',c:'news',d:'중국 · 영어 뉴스',u:'https://amg00405-rakutentv-cgtn-rakuten-i9tar.amagi.tv/master.m3u8'},
+ {id:'africa',cap:1,n:'Africanews',g:'en',c:'news',d:'아프리카 · 영어 뉴스',u:'https://cdn-euronews.akamaized.net/live/eds/africanews-en/25049/index.m3u8'},
+];
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const load=(k,d)=>{try{const v=localStorage.getItem('tv.'+k);return v==null?d:JSON.parse(v)}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem('tv.'+k,JSON.stringify(v))}catch(e){}};
+const toastEl=$('#toast');let tt;
+const toast=m=>{toastEl.textContent=m;toastEl.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>toastEl.classList.remove('show'),2600)};
+
+// 받아쓰기·번역은 나만의 라디오와 같은 Cloudflare 워커를 씀
+const WORKER='https://my-radio.ssangku2.workers.dev';
+let favs=load('favs',['kbs1','kbs2','arirang','cbsn']);
+let mine=load('mine',[]);
+let cat='all';
+let cur=null,playing=false,hls=null,retry=0,want=false;
+const tv=$('#tv');
+const all=()=>ST.concat(mine);
+const byId=id=>all().find(s=>s.id===id);
+const chNo=s=>all().indexOf(s)+1;
+
+// 목록
+const CATS=[['all','전체'],['kr','한국'],['en','해외'],['gen','종합·예능'],['news','뉴스'],['edu','교양']];
+const listNow=()=>{let l=favs.map(byId).filter(Boolean).concat(all().filter(s=>!favs.includes(s.id)));
+ if(cat==='kr'||cat==='en')l=l.filter(s=>s.g===cat);else if(cat==='mine')l=l.filter(s=>s.g==='mine');else if(cat!=='all')l=l.filter(s=>s.c===cat);
+ return l};
+const render=()=>{
+ $('#chips').innerHTML=CATS.map(([k,v])=>`<button class="chip" data-cat="${k}" aria-pressed="${cat===k}">${v}</button>`).join('');
+ const l=listNow();
+ $('#grid').innerHTML=l.length?l.map(s=>{const f=favs.includes(s.id);return `<div class="st${cur&&cur.id===s.id?' cur':''}" role="button" tabindex="0" data-id="${esc(s.id)}"><b>${esc(s.n)}</b><span>${s.cap?'<i class="cc" title="영어 자막">CC</i>':''}${chNo(s)} · ${esc(s.d||'')}</span><button class="fav${f?' on':''}" data-fav="${esc(s.id)}" aria-label="즐겨찾기">${f?'★':'☆'}</button></div>`}).join('')
+ :'<div class="empty">맞는 채널이 없어요.</div>';
+ $('#favNow').classList.toggle('on',!!cur&&favs.includes(cur.id));
+ fitNames()};
+const fitNames=()=>document.querySelectorAll('.st b').forEach(b=>{b.style.fontSize='';let s=parseFloat(getComputedStyle(b).fontSize);
+ while(b.scrollWidth>b.clientWidth+1&&s>12){s-=.5;b.style.fontSize=s+'px'}});
+let fitT;new ResizeObserver(()=>{clearTimeout(fitT);fitT=setTimeout(fitNames,100)}).observe($('#grid'));
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitNames);
+document.addEventListener('click',e=>{
+ const c=e.target.closest('[data-cat]');if(c){cat=c.dataset.cat;render();return}
+ const f=e.target.closest('[data-fav]');if(f){toggleFav(f.dataset.fav);return}
+ const s=e.target.closest('.st');if(s){const st=byId(s.dataset.id);if(cur&&cur.id===st.id&&playing)stop();else play(st);
+  if(matchMedia('(max-width:600px)').matches)$('#scr').scrollIntoView({behavior:'smooth',block:'start'})}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.classList&&e.target.classList.contains('st'))e.target.click()});
+const toggleFav=id=>{const i=favs.indexOf(id);if(i>-1)favs.splice(i,1);else favs.push(id);save('favs',favs);render();toast(i>-1?'즐겨찾기에서 뺐어요':'즐겨찾기에 넣었어요')};
+
+// 주소 풀기: KBS는 볼 때마다 새 주소(시간 제한 토큰)를 받아 옴
+const resolve=async s=>{
+ if(s.kbs){const r=await fetch(`https://cfpwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/${s.kbs}`);const j=await r.json();const it=(j.channel_item||[]).find(x=>/m3u8/.test(x.service_url||''))||j.channel_item[0];return it.service_url}
+ return s.u};
+
+// 화면: 꺼짐 / 지지직(연결 중) / 방송
+const noise=$('#noise'),nctx=noise.getContext('2d');let noiseT=null;
+const noiseOn=on=>{noise.hidden=!on;if(on&&!noiseT){const img=nctx.createImageData(160,90),d=img.data;
+  noiseT=setInterval(()=>{for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}nctx.putImageData(img,0,0)},60)}
+ else if(!on&&noiseT){clearInterval(noiseT);noiseT=null}};
+let osdT;const osd=(t,ms=3500)=>{const o=$('#osd');o.textContent=t;o.classList.add('show');clearTimeout(osdT);if(ms)osdT=setTimeout(()=>o.classList.remove('show'),ms)};
+const busy=t=>{$('#busy').textContent=t||'';$('#busy').hidden=!t};
+const setState=t=>{const el=$('#state');el.textContent=t;el.hidden=!t||t==='ON AIR'};
+
+const killHls=()=>{if(hls){hls.destroy();hls=null}capDetach()};
+const play=async(s,isRetry)=>{
+ if(!s)return;cur=s;want=true;pwrUi();if(!isRetry){retry=0;s._native=0}
+ $('#nowName').innerHTML=`<em>${chNo(s)}</em>${esc(s.n)}`;$('#nowDesc').textContent=s.d||'';
+ $('#off').hidden=true;noiseOn(true);osd(`CH ${String(chNo(s)).padStart(2,'0')}  ${s.n}`,0);busy('');
+ setState('연결 중…');save('last',s.id);render();mediaMeta();
+ let url;
+ try{url=await resolve(s)}catch(err){if(cur!==s)return;
+  setState('연결 실패');toast('방송 주소를 받아오지 못했어요');want=false;setPlaying(false);return}
+ if(cur!==s)return;
+ killHls();tv.pause();capReset();
+ if(/\.m3u8|media-manifest/i.test(url)&&window.Hls&&Hls.isSupported()&&!s._native){
+  hls=new Hls({lowLatencyMode:false,backBufferLength:30});
+  if(s.cap)capAttach(hls);
+  hls.loadSource(url);hls.attachMedia(tv);
+  hls.on(Hls.Events.ERROR,(_,d)=>{if(!d.fatal)return;
+   if(d.type===Hls.ErrorTypes.MEDIA_ERROR&&!s._rec){s._rec=1;hls.recoverMediaError();return}
+   if(tv.canPlayType('application/vnd.apple.mpegurl')&&!s._native){s._native=1;killHls();tv.src=url;tv.play().catch(blocked);return}
+   fail()});
+  hls.on(Hls.Events.MANIFEST_PARSED,()=>tv.play().catch(blocked));
+ }else{tv.src=url;tv.play().catch(blocked)}
+ capUi()};
+const blocked=e=>{if(e&&e.name==='NotAllowedError'){setState('▶ 눌러서 켜기');want=false;noiseOn(false)}};
+const fail=()=>{if(!want)return;if(retry<3){retry++;setState(`다시 연결 중 (${retry}/3)`);setTimeout(()=>want&&play(cur,true),1500*retry)}
+ else{setState('연결 실패');want=false;setPlaying(false);noiseOn(false);$('#off').hidden=false;$('#off').textContent='이 채널은 지금 안 나와요';toast('이 채널은 지금 안 나와요. 다른 채널을 골라 보세요.')}};
+const stop=()=>{want=false;killHls();tv.pause();tv.removeAttribute('src');tv.load();setPlaying(false);setState('');noiseOn(false);busy('');
+ $('#off').hidden=false;$('#off').textContent='꺼짐 · 채널을 누르면 켜져요';$('#osd').classList.remove('show')};
+const pwrUi=()=>$('#pwrOff').classList.toggle('live',!!(playing||want));
+const setPlaying=v=>{playing=v;$('#player').classList.toggle('playing',v);pwrUi();
+ $('#playIco').innerHTML=v?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4v16l13-8z"/>';
+ if('mediaSession' in navigator)navigator.mediaSession.playbackState=v?'playing':'paused';wakeUi(v);capUi()};
+tv.addEventListener('playing',()=>{retry=0;if(cur)cur._rec=0;setPlaying(true);setState('ON AIR');noiseOn(false);busy('');osd(`CH ${String(chNo(cur)).padStart(2,'0')}  ${cur.n}`)});
+tv.addEventListener('waiting',()=>want&&busy('버퍼링…'));
+tv.addEventListener('error',()=>{if(!hls)fail()});
+let stallT;tv.addEventListener('stalled',()=>{clearTimeout(stallT);stallT=setTimeout(()=>{if(want&&!tv.paused&&tv.readyState<3)fail()},15000)});
+
+$('#play').onclick=()=>{if(playing||want)stop();else play(cur||byId(load('last','kbs1'))||ST[0])};
+const step=d=>{const l=listNow().length?listNow():all();if(!l.length)return;let i=cur?l.indexOf(cur):-1;
+ i=i<0?(d>0?0:l.length-1):(i+d+l.length)%l.length;play(l[i])};
+$('#prev').onclick=()=>step(-1);$('#next').onclick=()=>step(1);
+$('#favNow').onclick=()=>cur&&toggleFav(cur.id);
+
+// 전체 화면: 화면 상자째로 (자막도 같이 크게). 아이폰은 동영상만 전체 화면이 됨
+const fullscreen=()=>{const el=$('#scr');
+ if(document.fullscreenElement||document.webkitFullscreenElement){(document.exitFullscreen||document.webkitExitFullscreen).call(document);return}
+ if(el.requestFullscreen)el.requestFullscreen().then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}}).catch(()=>{});
+ else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();else if(tv.webkitEnterFullscreen)tv.webkitEnterFullscreen()};
+$('#full').onclick=fullscreen;$('#scr').addEventListener('dblclick',fullscreen);
+
+// 볼륨: 황동 노브 (돌리기·휠·−/+·↑↓), 가운데 누르면 음소거
+const knob=$('#knob');let vol=70,muted=false;
+const volIco=()=>{$('#volOut').textContent=muted?'무음':vol;$('#volOut').classList.toggle('muted',muted);
+ knob.style.setProperty('--a',`${-135+270*vol/100}deg`);knob.setAttribute('aria-valuenow',vol);knob.setAttribute('aria-valuetext',muted?'무음':`${vol}%`)};
+const setVol=v=>{vol=Math.round(Math.max(0,Math.min(100,v)));tv.volume=(vol/100)**2;save('vol',vol);if(vol>0&&muted){muted=false;tv.muted=false}volIco()};
+$('#kticks').innerHTML=Array.from({length:11},(_,i)=>{const a=(-225+27*i)*Math.PI/180,r1=42,r2=i%5?38:36;
+ return `<line x1="${43+r1*Math.cos(a)}" y1="${43+r1*Math.sin(a)}" x2="${43+r2*Math.cos(a)}" y2="${43+r2*Math.sin(a)}" stroke="#d9c9a6" stroke-width="${i%5?1.5:2.5}" stroke-linecap="round"/>`}).join('');
+let drag=null;
+const kAng=e=>{const r=knob.getBoundingClientRect();return Math.atan2(e.clientY-r.top-r.height/2,e.clientX-r.left-r.width/2)*180/Math.PI};
+knob.addEventListener('pointerdown',e=>{e.preventDefault();knob.setPointerCapture(e.pointerId);drag={a:kAng(e),v:vol,moved:0,x:e.clientX,y:e.clientY};knob.focus()});
+knob.addEventListener('pointermove',e=>{if(!drag)return;const a=kAng(e);let d=a-drag.a;if(d>180)d-=360;if(d<-180)d+=360;drag.a=a;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>6)drag.moved=1;if(!drag.moved)return;
+ drag.v=Math.max(0,Math.min(100,drag.v+Math.max(-40,Math.min(40,d))*100/270));setVol(drag.v)});
+knob.addEventListener('pointerup',()=>{if(drag&&!drag.moved)toggleMute();drag=null});knob.addEventListener('pointercancel',()=>{drag=null});
+knob.addEventListener('wheel',e=>{e.preventDefault();setVol(vol+(e.deltaY<0?5:-5))},{passive:false});
+knob.addEventListener('keydown',e=>{const s={ArrowUp:5,ArrowRight:5,ArrowDown:-5,ArrowLeft:-5,PageUp:10,PageDown:-10}[e.key];
+ if(s){e.preventDefault();e.stopPropagation();setVol(vol+s)}});
+$('#volDown').onclick=()=>setVol(vol-5);$('#volUp').onclick=()=>setVol(vol+5);
+const toggleMute=()=>{muted=!muted;tv.muted=muted;volIco()};
+setVol(load('vol',70));
+
+// 단축키: Space 켜기/끄기, ←→ 채널, ↑↓ 볼륨, 숫자 채널 번호, Enter 전체 화면, M 음소거, F 즐겨찾기, C 자막
+let numBuf='',numT;
+document.addEventListener('keydown',e=>{
+ if(e.target.matches('input,select,textarea')){if(e.key==='Escape')e.target.blur();return}
+ if(e.ctrlKey||e.metaKey||e.altKey)return;
+ const k=e.key;
+ if(k===' '){e.preventDefault();$('#play').click()}
+ else if(k==='ArrowRight'||k==='PageUp')step(1);else if(k==='ArrowLeft'||k==='PageDown')step(-1);
+ else if(k==='ArrowUp'){e.preventDefault();setVol(vol+5)}else if(k==='ArrowDown'){e.preventDefault();setVol(vol-5)}
+ else if(k==='Enter'&&!(e.target.classList&&e.target.classList.contains('st'))&&e.target.tagName!=='BUTTON')fullscreen();
+ else if(k==='m'||k==='M'||k==='ㅡ')toggleMute();
+ else if(k==='f'||k==='F'||k==='ㄹ')$('#favNow').click();
+ else if(k==='c'||k==='C'||k==='ㅊ')setCap({off:'en',en:'ko',ko:'off'}[capMode]);
+ else if(/^[0-9]$/.test(k)){numBuf+=k;osd(`CH ${numBuf.padStart(2,'-')}`,0);clearTimeout(numT);
+  numT=setTimeout(()=>{const s=all()[+numBuf-1];numBuf='';if(s)play(s);else{osd('없는 채널',1500)}},numBuf.length>=2?100:1300)}
+});
+
+// 미디어 키
+const mediaMeta=()=>{if(!('mediaSession' in navigator)||!cur)return;
+ navigator.mediaSession.metadata=new MediaMetadata({title:cur.n,artist:cur.d||'',album:'나만의 TV'})};
+if('mediaSession' in navigator){const m=navigator.mediaSession;
+ m.setActionHandler('play',()=>play(cur||ST[0]));m.setActionHandler('pause',stop);m.setActionHandler('stop',stop);
+ m.setActionHandler('nexttrack',()=>step(1));m.setActionHandler('previoustrack',()=>step(-1))}
+
+// 보는 동안 화면 꺼짐 막기
+let wake=null,wakeAsk=false;
+const wakeUi=on=>{if(on){if(wake||wakeAsk||!('wakeLock' in navigator)||document.visibilityState!=='visible')return;wakeAsk=true;
+  navigator.wakeLock.request('screen').then(w=>{wakeAsk=false;wake=w;w.addEventListener('release',()=>{if(wake===w)wake=null});if(!playing){w.release().catch(()=>{});wake=null}}).catch(()=>{wakeAsk=false})}
+ else if(wake){const w=wake;wake=null;w.release().catch(()=>{})}};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wakeUi(playing)});
+
+// 끄기 버튼 + 취침 타이머 (마지막 30초 동안 소리가 서서히 작아짐)
+let sleepAt=0,baseVol=null;
+$('#pwrOff').onclick=()=>{if(!(playing||want)){toast('TV가 꺼져 있어요');return}sleepAt=0;$('#sleep').value='0';stop();toast('TV를 껐어요')};
+$('#sleep').onchange=e=>{const m=+e.target.value;sleepAt=m?Date.now()+m*60000:0;toast(m?`${m}분 뒤에 꺼집니다`:'취침 타이머를 껐어요');tick()};
+const sleepUi=left=>{$('#slp').classList.toggle('on',left>0);$('#sleepLbl').textContent=left>0?`${Math.floor(left/60)}:${String(Math.floor(left%60)).padStart(2,'0')}`:'취침'};
+const tick=()=>{const d=new Date();
+ $('#clock').textContent=d.toLocaleString('ko-KR',{month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'});
+ if(sleepAt){const left=(sleepAt-Date.now())/1000;
+  if(left<=0){sleepAt=0;$('#sleep').value='0';sleepUi(0);stop();if(baseVol!=null){setVol(baseVol);baseVol=null}toast('잘 자요. TV를 껐어요.')}
+  else{sleepUi(left);if(left<30&&playing){if(baseVol==null)baseVol=vol;tv.volume=((baseVol/100)**2)*(left/30)}}}
+ else sleepUi(0)};
+setInterval(tick,1000);tick();
+
+// ── 영어 자막 ──────────────────────────────────────────────
+// hls.js가 화면에 넣으려고 미리 받아 둔 소리 조각(재생보다 수십 초 앞섬)을 가로채서,
+// 16kHz 소리 파일로 바꿔 워커(Whisper)로 받아씀 → 단어마다 '몇 초에 말했는지'가 오므로
+// 화면이 그 시간에 오면 단어를 한 개씩 채워 2줄로 보여 줌. 그래서 말소리와 자막이 맞음.
+let capMode=load('capMode','en');
+const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
+const capWant=()=>!!(cur&&cur.cap&&capMode!=='off');
+const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
+const capReset=()=>{CAP.run++;CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
+ $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
+const capDetach=()=>{CAP.run++};
+const boxType=u=>u.length>8?String.fromCharCode(u[4],u[5],u[6],u[7]):'';
+const capAttach=h=>{const run=CAP.run;
+ h.on(Hls.Events.BUFFER_APPENDING,(e,d)=>{if(run!==CAP.run||!capWant())return;if(d.type!=='audio'&&d.type!=='audiovideo')return;
+  const u=new Uint8Array(d.data.buffer?d.data.buffer.slice(d.data.byteOffset,d.data.byteOffset+d.data.byteLength):d.data);const b=boxType(u);
+  if(b==='ftyp'||b==='moov'){CAP.init[d.type]=u;return}
+  const f=d.frag;if(!f||f.sn==='initSegment')return;const key=f.type+':'+f.sn;
+  let x=CAP.frags.get(key);if(!x){x={type:d.type,parts:[],init:CAP.init[d.type]};CAP.frags.set(key,x)}x.parts.push(u)});
+ h.on(Hls.Events.FRAG_BUFFERED,(e,d)=>{if(run!==CAP.run)return;const f=d.frag,key=f.type+':'+f.sn,x=CAP.frags.get(key);if(!x)return;CAP.frags.delete(key);
+  x.start=f.start;x.dur=f.duration;capBatch(x)})};
+// 조각을 4초 이상 모아 한 번에 받아쓰기 (짧으면 문맥이 없어 잘 틀림)
+const capBatch=x=>{if(!capWant())return;
+ if(x.start+x.dur<tv.currentTime-1&&tv.currentTime>0)return;   // 이미 지나간 소리
+ const b=CAP.batch,l=b[b.length-1];
+ if(l&&(Math.abs(l.start+l.dur-x.start)>.6||l.init!==x.init))capFlush();
+ CAP.batch.push(x);const tot=CAP.batch.reduce((a,y)=>a+y.dur,0);if(tot>=4)capFlush()};
+const capFlush=()=>{const b=CAP.batch;if(!b.length)return;CAP.batch=[];
+ const key=Math.round(b[0].start*10);if(CAP.done.has(key))return;CAP.done.add(key);   // 같은 조각을 두 번 받으면(화질 바뀜 등) 한 번만
+ CAP.q.push({start:b[0].start,end:b[b.length-1].start+b[b.length-1].dur,init:b[0].init,parts:b.flatMap(y=>y.parts)});
+ CAP.q.sort((a,b)=>a.start-b.start);capRunQ()};
+const capRunQ=()=>{while(CAP.busy<2&&CAP.q.length){const j=CAP.q.shift();
+  if(j.end<tv.currentTime-1&&tv.currentTime>0)continue;CAP.busy++;capJob(j,CAP.run).finally(()=>{CAP.busy--;capRunQ()})}};
+// mp4 소리 조각 → 16kHz 한 채널 WAV
+const toWav=async bytes=>{const oc=new OfflineAudioContext(1,16000,16000);
+ const ab=await oc.decodeAudioData(bytes.buffer.slice(0));const n=Math.min(ab.length,16000*12),ch=ab.numberOfChannels;
+ const pcm=new Int16Array(n);for(let i=0;i<n;i++){let s=0;for(let c=0;c<ch;c++)s+=ab.getChannelData(c)[i];s/=ch;pcm[i]=Math.max(-1,Math.min(1,s))*32767}
+ const buf=new ArrayBuffer(44+n*2),v=new DataView(buf),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+ v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+ new Int16Array(buf,44).set(pcm);return new Uint8Array(buf)};
+const joinU8=a=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let i=0;for(const x of a){o.set(x,i);i+=x.length}return o};
+const capJob=async(j,run)=>{
+ if(!j.init){return}
+ let body;try{body=await toWav(joinU8([j.init,...j.parts]))}catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('이 채널은 소리를 읽지 못해 자막을 만들 수 없어요');return}
+ try{const r=await fetch(`${WORKER}/transcribe?prompt=${encodeURIComponent(CAP.prompt.slice(-200))}`,{method:'POST',body});
+  const k=await r.json();if(run!==CAP.run)return;if(k.error)throw new Error(k.error);CAP.ok++;
+  const t=capClean(k.text);if(!t){capIdle();return}
+  if(CAP.segs.some(g=>g.text===t&&Math.abs(g.start-j.start)<15)){CAP.prompt='';return}   // 앞 글을 되풀이하는 받아쓰기 헛소리
+  CAP.prompt=(CAP.prompt+' '+t).slice(-400);capSeg(j.start,j.end,t,k.words)}
+ catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('자막 서버에 연결하지 못했어요')}};
+const capError=m=>{$('#subEn').innerHTML=`<span class="wait">${esc(m)}</span>`};
+const capIdle=()=>{if(!CAP.segs.length)$('#subEn').innerHTML='<span class="wait">말소리를 기다리는 중…</span>'};
+// 받아쓴 글: 단어별 시간(조각 안 기준)을 화면 재생 시간으로 바꿔 둠
+const capSeg=(start,end,text,wt)=>{const g={start,end,text,w:text.split(' ')};
+ if(wt&&wt.length){g.w=[];g.ts=[];for(const[x,s]of wt){const c=String(x).replace(/^(\.{2,}|…)/,'').replace(/(\.{2,}|…)$/,'');if(!c)continue;g.w.push(c);g.ts.push(start+s)}if(!g.w.length)return}
+ CAP.segs.push(g);CAP.segs.sort((a,b)=>a.start-b.start);const t=tv.currentTime;CAP.segs=CAP.segs.filter(g=>g.end>t-60)};
+// 0.15초마다: 지금까지 말한 단어를 2줄 창에 채움 (지금 줄이 아랫줄에 오게 위로 밀어 올림). 한글 켬: 영어 1줄 + 한글 1줄
+const CAP_LEAD=.3;let capLine=-1,capT=null;
+const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEAD;const w=[];
+ for(const g of CAP.segs){if(g.start>t)break;
+  if(g.ts){for(let i=0;i<g.w.length;i++)if(g.ts[i]<=t)w.push(g.w[i])}
+  else{const k=t>=g.end?g.w.length:Math.ceil(g.w.length*(t-g.start)/Math.max(.5,g.end-g.start));for(let i=0;i<k;i++)w.push(g.w[i])}}
+ // 3초 넘게 말이 없으면(광고·음악) 자막을 비움
+ const lastEnd=CAP.segs.filter(g=>g.start<=t).reduce((a,g)=>Math.max(a,g.end),0);const quiet=lastEnd&&t-lastEnd>3;
+ const key=w.length+':'+quiet;if(key===CAP.shown||!w.length)return;CAP.shown=key;
+ const el=$('#subEn'),box=$('#subx');
+ if(quiet){el.innerHTML='';$('#subKo').innerHTML='';return}
+ el.innerHTML=`<span class="l">${esc(w.slice(-50).join(' '))}</span>`;
+ const lh=box.clientHeight/(capMode==='ko'?1:2),top=Math.max(0,el.offsetHeight-box.clientHeight);
+ if(Math.abs(top-capLine)>2){capLine=top;box.scrollTo({top,behavior:'smooth'})}
+ if(capMode==='ko'){const text=w.join(' '),m=text.match(/[^.?!]+[.?!]+(?=\s|$)/g),sent=m&&m[m.length-1].trim();
+  if(sent&&sent!==CAP.lastSent){CAP.lastSent=sent;const run=CAP.run;
+   fetch(`${WORKER}/translate?text=${encodeURIComponent(sent)}`).then(r=>r.json()).then(j=>{if(run===CAP.run&&j.ko)$('#subKo').innerHTML=`<span>${esc(j.ko)}</span>`}).catch(()=>{})}}};
+const capUi=()=>{const show=capWant()&&(playing||want);$('#sub').hidden=!show;$('#sub').classList.toggle('ko',capMode==='ko');
+ document.querySelectorAll('[data-cap]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.cap===capMode));
+ if(show&&!capT)capT=setInterval(capTick,150);else if(!show&&capT){clearInterval(capT);capT=null}};
+const setCap=m=>{const was=capMode;capMode=m;save('capMode',m);CAP.shown='';CAP.lastSent='';$('#subKo').innerHTML='';capLine=-1;
+ toast({off:'자막을 껐어요',en:'영어 자막',ko:'영어 + 한글 자막'}[m]);
+ // 껐다 켜면 소리 조각을 처음부터 다시 모아야 하므로 채널을 다시 연결
+ if(was==='off'&&m!=='off'&&cur&&cur.cap&&(playing||want))play(cur);else capUi()};
+document.querySelectorAll('[data-cap]').forEach(b=>b.onclick=()=>b.dataset.cap!==capMode&&setCap(b.dataset.cap));
+
+// ── 전 세계 채널 찾기 (iptv-org 공개 목록) ─────────────────
+let world=null,wList=[];
+const loadWorld=async()=>{if(world)return world;const t=await (await fetch('https://iptv-org.github.io/iptv/index.m3u')).text();const out=[],L=t.split('\n');
+ for(let i=0;i<L.length;i++){if(!L[i].startsWith('#EXTINF'))continue;let j=i+1;while(j<L.length&&L[j].startsWith('#'))j++;const u=(L[j]||'').trim();
+  if(!/^https:\/\//.test(u)||!/\.m3u8/.test(u))continue;const name=L[i].slice(L[i].lastIndexOf(',')+1).trim(),id=(L[i].match(/tvg-id="([^"]*)"/)||[])[1]||'',gr=(L[i].match(/group-title="([^"]*)"/)||[])[1]||'';
+  out.push({name,id,gr,u})}return world=out};
+$('#wForm').onsubmit=async e=>{e.preventDefault();const w=$('#wq').value.trim().toLowerCase();if(!w)return;const ul=$('#wRes');ul.innerHTML='<li>목록 받는 중… (처음 한 번은 몇 초 걸려요)</li>';
+ try{const l=await loadWorld();wList=l.filter(s=>(s.name+' '+s.id+' '+s.gr).toLowerCase().includes(w)).slice(0,60);
+  ul.innerHTML=wList.length?wList.map((s,i)=>{const cc=(s.id.split('.')[1]||'').split('@')[0].toUpperCase();return `<li><div><b>${esc(s.name)}</b><small>${esc([cc,s.gr].filter(Boolean).join(' · '))}</small></div><button data-wp="${i}">보기</button><button data-wa="${i}" aria-label="내 채널에 추가">＋</button></li>`}).join(''):'<li>결과가 없어요. 영어 이름으로도 찾아보세요.</li>'}
+ catch(err){ul.innerHTML='<li>목록 서버에 연결하지 못했어요.</li>'}};
+const fromW=s=>({id:'w_'+(s.id||s.name).replace(/\W+/g,'_')+'_'+s.u.length,n:s.name.replace(/\s*\(\d+p\)|\s*\[.*?\]/g,'').trim().slice(0,60),g:'mine',c:/news/i.test(s.gr)?'news':/educ|docum|kids|science/i.test(s.gr)?'edu':'gen',d:[(s.id.split('.')[1]||'').split('@')[0].toUpperCase(),s.gr].filter(Boolean).join(' · ')||'내 채널',u:s.u});
+const addMine=s=>{if(!mine.find(m=>m.id===s.id)){mine.push(s);save('mine',mine)}if(!favs.includes(s.id)){favs.push(s.id);save('favs',favs)}render();toast(`"${s.n}" 을(를) 즐겨찾기에 넣었어요`)};
+$('#wRes').addEventListener('click',e=>{const p=e.target.closest('[data-wp]'),a=e.target.closest('[data-wa]');
+ if(p){const s=fromW(wList[+p.dataset.wp]);if(!byId(s.id)){mine.push(s);save('mine',mine)}play(byId(s.id));$('#scr').scrollIntoView({behavior:'smooth',block:'start'})}
+ if(a)addMine(fromW(wList[+a.dataset.wa]))});
+// 내 채널 지우기: 카드 우클릭(길게 누르기)
+$('#grid').addEventListener('contextmenu',e=>{const s=e.target.closest('.st');if(!s||!/^w_/.test(s.dataset.id))return;e.preventDefault();
+ mine=mine.filter(m=>m.id!==s.dataset.id);favs=favs.filter(f=>f!==s.dataset.id);save('mine',mine);save('favs',favs);render();toast('지웠어요')});
+
+const last=byId(load('last',''));if(last){cur=last;$('#nowName').innerHTML=`<em>${chNo(last)}</em>${esc(last.n)}`;$('#nowDesc').textContent=last.d||''}
+render();capUi();
+if(location.hash==='#resume'&&last)setTimeout(()=>play(last),0);
+
+// PWA: 설치 버튼 + 서비스워커
+let deferred=null;const ib=$('#install');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;ib.hidden=false});
+ib.onclick=async()=>{if(!deferred)return;deferred.prompt();const c=await deferred.userChoice;deferred=null;ib.hidden=true;if(c.outcome==='accepted')toast('설치했어요. 바탕화면·홈 화면에서 여세요.')};
+window.addEventListener('appinstalled',()=>{ib.hidden=true});
+if('serviceWorker' in navigator&&/^http/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.__tv={CAP,get hls(){return hls}};
+}
+</script>
+</body>
+</html>
