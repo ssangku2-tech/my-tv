@@ -109,9 +109,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .kcap.muted{color:var(--brass-l);font-size:10px}
 /* 도구줄 */
 .tools{max-width:880px;margin:12px auto 0;display:flex;gap:10px;align-items:stretch}
-.segs{flex:1;display:grid;grid-template-columns:auto 1fr 1fr 1fr;border:1.5px solid light-dark(var(--wal),#6b5440);border-radius:12px;overflow:hidden}
-.segl{display:flex;align-items:center;padding:0 10px 0 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid var(--line)}
-.seg{border:0;background:none;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap}
+.segs{flex:1;display:flex;border:1.5px solid light-dark(var(--wal),#6b5440);border-radius:12px}
+.segs>:first-child{border-radius:10px 0 0 10px}.segs>:last-child{border-radius:0 10px 10px 0}
+.segl{flex:none;display:flex;align-items:center;padding:0 10px 0 12px;font-size:13px;font-weight:700;color:var(--mute);border-right:1px solid var(--line)}
+.seg{flex:1;position:relative;border:0;background:none;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
+.on-badge{display:none;position:absolute;top:-8px;right:8px;z-index:1;font-style:normal;font-size:9px;line-height:14px;font-weight:800;letter-spacing:.04em;padding:1px 6px;border-radius:99px;background:#ffb347;color:#3a1f05;box-shadow:0 0 8px 1px rgba(255,170,60,.75)}
+.seg.live .on-badge{display:inline-block}
+.tools.capr{margin-top:8px}
 .seg[aria-pressed=true]{background:var(--wal);color:var(--ivory)}
 .slp{position:relative;flex:none;display:flex;align-items:center;gap:6px;padding:0 14px;border:1.5px solid var(--line);border-radius:12px;min-height:44px;font-weight:700;color:var(--ink);white-space:nowrap}
 .slp svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8}
@@ -155,6 +160,12 @@ h2{font-size:20px;margin:0 0 6px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--wal);color:var(--ivory);padding:10px 18px;border-radius:10px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;z-index:9}
 .toast.show{opacity:1}
 footer{color:var(--mute);font-size:13px}
+body.screenmode{background:#000;overflow:hidden}
+.screenmode .band:not(#player),.screenmode footer,.screenmode .top,.screenmode .now,.screenmode .panel,.screenmode .tools{display:none}
+.screenmode #player{padding:0}.screenmode .cab{padding:0;border-radius:0;background:#000;box-shadow:none}
+.screenmode .scr{position:fixed;inset:0;aspect-ratio:auto;border-radius:0;box-shadow:none}.screenmode .scr::after{display:none}
+.screenmode .off{font-size:clamp(16px,2.2vw,30px);line-height:1.6}.screenmode .off b{display:block;font-size:2.4em;color:#cdb88f;font-variant-numeric:tabular-nums}
+.screenmode.idle{cursor:none}
 @media(max-width:600px){
  .now{margin-top:14px}.panel{gap:6px;padding-top:10px}.transport{gap:6px}
  .rb{width:40px;height:40px}.rb.big{width:52px;height:52px}.rb svg{width:18px;height:18px}
@@ -162,7 +173,7 @@ footer{color:var(--mute);font-size:13px}
  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.st{padding:8px 26px 9px;min-height:58px}.st b{font-size:17px}.st span{font-size:12px}
  .top h1{font-size:18px}.clock{display:none}.inst{min-height:36px;padding:6px 14px;font-size:14px}
  .chips{grid-template-columns:repeat(3,minmax(0,1fr))}.chip{font-size:14px}
- .tools{gap:6px}.segl{display:none}.segs{grid-template-columns:1fr 1fr 1fr}.slp,.pwr{padding:0 10px;gap:4px}}
+ .tools{gap:6px}.seg svg{display:none}.slp,.pwr{padding:0 10px;gap:4px}}
 @media(max-width:380px){.slp span,.pwr span{display:none}.rb:not(.big){width:36px;height:36px}}
 </style>
 </head>
@@ -203,15 +214,21 @@ footer{color:var(--mute);font-size:13px}
   </div>
  </div>
  <div class="tools">
-  <div class="segs" role="group" aria-label="영어 방송 자막">
-   <span class="segl">자막</span>
-   <button class="seg" data-cap="off" aria-pressed="false">끔</button>
-   <button class="seg" data-cap="en" aria-pressed="true">영어</button>
-   <button class="seg" data-cap="ko" aria-pressed="false">영어+한글</button>
+  <div class="segs" role="group" aria-label="화면 나오는 곳">
+   <button class="seg" id="outPhone" aria-pressed="true"><svg viewBox="0 0 24 24"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18.5h2"/></svg>이 기기</button>
+   <button class="seg" id="outPc" aria-pressed="false"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4"/></svg>PC 화면<i class="on-badge" aria-hidden="true">ON</i></button>
   </div>
   <label class="slp" id="slp"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z" stroke-linejoin="round"/></svg><span id="sleepLbl">취침</span>
    <select id="sleep" aria-label="취침 타이머"><option value="0">취침 타이머 끄기</option><option value="15">15분 뒤 끄기</option><option value="30">30분 뒤 끄기</option><option value="60">1시간 뒤 끄기</option><option value="90">1시간 30분 뒤 끄기</option><option value="120">2시간 뒤 끄기</option></select></label>
   <button class="pwr" id="pwrOff" aria-label="TV 끄기" title="TV 끄기"><svg viewBox="0 0 24 24"><path d="M12 3v8M7.1 6.2a7.5 7.5 0 109.8 0" stroke-linecap="round"/></svg><span>끄기</span></button>
+ </div>
+ <div class="tools capr">
+  <div class="segs" role="group" aria-label="영어 방송 자막">
+   <span class="segl">영어 자막</span>
+   <button class="seg" data-cap="off" aria-pressed="false">끔</button>
+   <button class="seg" data-cap="en" aria-pressed="true">영어</button>
+   <button class="seg" data-cap="ko" aria-pressed="false">영어+한글</button>
+  </div>
  </div>
 </section>
 
@@ -277,6 +294,15 @@ const toast=m=>{toastEl.textContent=m;toastEl.classList.add('show');clearTimeout
 
 // 받아쓰기·번역은 나만의 라디오와 같은 Cloudflare 워커를 씀
 const WORKER='https://my-radio.ssangku2.workers.dev';
+// PC 화면: 폰 → ntfy.sh (<코드>-tv) → PC의 'PC TV' 창(이 페이지를 ?screen 으로 연 것) → 상태는 <코드>-tv-st 로 돌아옴
+// 코드는 나만의 라디오의 'PC 스피커' 연결 코드와 같음 (같은 주소라 라디오에서 연결했으면 여기도 자동 연결)
+const NTFY='https://ntfy.sh',CODE_RE=/^[A-Za-z0-9_-]{6,64}$/;
+const screenMode=/(^|[?&])screen\b/.test(location.search.slice(1));
+let out=load('out','phone'),pcCode=load('pcCode','');
+if(!pcCode){try{const r=JSON.parse(localStorage.getItem('radio.pcCode')||'""');if(CODE_RE.test(r))pcCode=r}catch(e){}}
+if(screenMode){out='phone';const h=location.hash.slice(1);if(CODE_RE.test(h)){pcCode=h;save('screenCode',h);history.replaceState(null,'',location.pathname+location.search)}else pcCode=load('screenCode','')}
+const ntfyPost=(topic,m)=>fetch(`${NTFY}/${pcCode}-${topic}`,{method:'POST',body:JSON.stringify(m)});
+const pcSend=m=>ntfyPost('tv',m).catch(()=>toast('인터넷 연결을 확인해 주세요'));
 let favs=load('favs',['kbs1','kbs2','arirang','cbsn']);
 let mine=load('mine',[]);
 let cat='all';
@@ -331,6 +357,7 @@ const play=async(s,isRetry)=>{
  $('#nowName').innerHTML=`<em>${chNo(s)}</em>${esc(s.n)}`;$('#nowDesc').textContent=s.d||'';
  $('#off').hidden=true;noiseOn(true);osd(`CH ${String(chNo(s)).padStart(2,'0')}  ${s.n}`,0);busy('');
  setState('연결 중…');save('last',s.id);render();mediaMeta();
+ if(out==='pc'){killHls();tv.pause();noiseOn(false);pcCast(s);return}
  let url;
  try{url=await resolve(s)}catch(err){if(cur!==s)return;
   setState('연결 실패');toast('방송 주소를 받아오지 못했어요');want=false;setPlaying(false);return}
@@ -349,14 +376,16 @@ const play=async(s,isRetry)=>{
  capUi()};
 const blocked=e=>{if(e&&e.name==='NotAllowedError'){setState('▶ 눌러서 켜기');want=false;noiseOn(false)}};
 const fail=()=>{if(!want)return;if(retry<3){retry++;setState(`다시 연결 중 (${retry}/3)`);setTimeout(()=>want&&play(cur,true),1500*retry)}
- else{setState('연결 실패');want=false;setPlaying(false);noiseOn(false);$('#off').hidden=false;$('#off').textContent='이 채널은 지금 안 나와요';toast('이 채널은 지금 안 나와요. 다른 채널을 골라 보세요.')}};
-const stop=()=>{want=false;killHls();tv.pause();tv.removeAttribute('src');tv.load();setPlaying(false);setState('');noiseOn(false);busy('');
- $('#off').hidden=false;$('#off').textContent='꺼짐 · 채널을 누르면 켜져요';$('#osd').classList.remove('show')};
+ else{setState('연결 실패');scrPub('fail');want=false;setPlaying(false);noiseOn(false);$('#off').hidden=false;$('#off').textContent='이 채널은 지금 안 나와요';toast('이 채널은 지금 안 나와요. 다른 채널을 골라 보세요.')}};
+const stop=()=>{const wasPc=out==='pc'&&!!pcCode&&(want||playing);want=false;killHls();tv.pause();tv.removeAttribute('src');tv.load();setPlaying(false);setState('');noiseOn(false);busy('');
+ $('#off').hidden=false;$('#off').textContent='꺼짐 · 채널을 누르면 켜져요';$('#osd').classList.remove('show');
+ if(screenMode){scrIdle();scrPub('stop')}
+ if(wasPc){setState('PC 끄는 중…');pcSend({a:'stop'})}};
 const pwrUi=()=>$('#pwrOff').classList.toggle('live',!!(playing||want));
 const setPlaying=v=>{playing=v;$('#player').classList.toggle('playing',v);pwrUi();
  $('#playIco').innerHTML=v?'<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>':'<path d="M7 4v16l13-8z"/>';
- if('mediaSession' in navigator)navigator.mediaSession.playbackState=v?'playing':'paused';wakeUi(v);capUi()};
-tv.addEventListener('playing',()=>{retry=0;if(cur)cur._rec=0;setPlaying(true);setState('ON AIR');noiseOn(false);busy('');osd(`CH ${String(chNo(cur)).padStart(2,'0')}  ${cur.n}`)});
+ if('mediaSession' in navigator)navigator.mediaSession.playbackState=v?'playing':'paused';wakeUi(v&&out!=='pc');capUi()};
+tv.addEventListener('playing',()=>{retry=0;if(cur)cur._rec=0;setPlaying(true);scrPub('play');setState('ON AIR');noiseOn(false);busy('');osd(`CH ${String(chNo(cur)).padStart(2,'0')}  ${cur.n}`)});
 tv.addEventListener('waiting',()=>want&&busy('버퍼링…'));
 tv.addEventListener('error',()=>{if(!hls)fail()});
 let stallT;tv.addEventListener('stalled',()=>{clearTimeout(stallT);stallT=setTimeout(()=>{if(want&&!tv.paused&&tv.readyState<3)fail()},15000)});
@@ -378,7 +407,9 @@ $('#full').onclick=fullscreen;$('#scr').addEventListener('dblclick',fullscreen);
 const knob=$('#knob');let vol=70,muted=false;
 const volIco=()=>{$('#volOut').textContent=muted?'무음':vol;$('#volOut').classList.toggle('muted',muted);
  knob.style.setProperty('--a',`${-135+270*vol/100}deg`);knob.setAttribute('aria-valuenow',vol);knob.setAttribute('aria-valuetext',muted?'무음':`${vol}%`)};
-const setVol=v=>{vol=Math.round(Math.max(0,Math.min(100,v)));tv.volume=(vol/100)**2;save('vol',vol);if(vol>0&&muted){muted=false;tv.muted=false}volIco()};
+let volT;
+const setVol=(v,quiet)=>{vol=Math.round(Math.max(0,Math.min(100,v)));tv.volume=(vol/100)**2;if(!screenMode)save('vol',vol);if(vol>0&&muted){muted=false;tv.muted=false}volIco();
+ if(out==='pc'&&pcCode&&!quiet){clearTimeout(volT);volT=setTimeout(()=>pcSend({a:'vol',v:vol}),400)}};
 $('#kticks').innerHTML=Array.from({length:11},(_,i)=>{const a=(-225+27*i)*Math.PI/180,r1=42,r2=i%5?38:36;
  return `<line x1="${43+r1*Math.cos(a)}" y1="${43+r1*Math.sin(a)}" x2="${43+r2*Math.cos(a)}" y2="${43+r2*Math.sin(a)}" stroke="#d9c9a6" stroke-width="${i%5?1.5:2.5}" stroke-linecap="round"/>`}).join('');
 let drag=null;
@@ -391,7 +422,7 @@ knob.addEventListener('wheel',e=>{e.preventDefault();setVol(vol+(e.deltaY<0?5:-5
 knob.addEventListener('keydown',e=>{const s={ArrowUp:5,ArrowRight:5,ArrowDown:-5,ArrowLeft:-5,PageUp:10,PageDown:-10}[e.key];
  if(s){e.preventDefault();e.stopPropagation();setVol(vol+s)}});
 $('#volDown').onclick=()=>setVol(vol-5);$('#volUp').onclick=()=>setVol(vol+5);
-const toggleMute=()=>{muted=!muted;tv.muted=muted;volIco()};
+const toggleMute=()=>{muted=!muted;tv.muted=muted;volIco();if(out==='pc'&&pcCode)pcSend({a:'vol',v:muted?0:vol})};
 setVol(load('vol',70));
 
 // 단축키: Space 켜기/끄기, ←→ 채널, ↑↓ 볼륨, 숫자 채널 번호, Enter 전체 화면, M 음소거, F 즐겨찾기, C 자막
@@ -427,7 +458,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 
 // 끄기 버튼 + 취침 타이머 (마지막 30초 동안 소리가 서서히 작아짐)
 let sleepAt=0,baseVol=null;
-$('#pwrOff').onclick=()=>{if(!(playing||want)){toast('TV가 꺼져 있어요');return}sleepAt=0;$('#sleep').value='0';stop();toast('TV를 껐어요')};
+$('#pwrOff').onclick=()=>{if(out==='pc'&&pcCode){sleepAt=0;$('#sleep').value='0';want=true;stop();toast('PC 화면 TV를 껐어요');return}
+ if(!(playing||want)){toast('TV가 꺼져 있어요');return}sleepAt=0;$('#sleep').value='0';stop();toast('TV를 껐어요')};
 $('#sleep').onchange=e=>{const m=+e.target.value;sleepAt=m?Date.now()+m*60000:0;toast(m?`${m}분 뒤에 꺼집니다`:'취침 타이머를 껐어요');tick()};
 const sleepUi=left=>{$('#slp').classList.toggle('on',left>0);$('#sleepLbl').textContent=left>0?`${Math.floor(left/60)}:${String(Math.floor(left%60)).padStart(2,'0')}`:'취침'};
 const tick=()=>{const d=new Date();
@@ -444,7 +476,7 @@ setInterval(tick,1000);tick();
 // 화면이 그 시간에 오면 단어를 한 개씩 채워 2줄로 보여 줌. 그래서 말소리와 자막이 맞음.
 let capMode=load('capMode','en');
 const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
-const capWant=()=>!!(cur&&cur.cap&&capMode!=='off');
+const capWant=()=>!!(cur&&cur.cap&&capMode!=='off'&&out!=='pc');
 const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
 const capReset=()=>{CAP.run++;CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
  $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
@@ -514,8 +546,9 @@ const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEA
 const capUi=()=>{const show=capWant()&&(playing||want);$('#sub').hidden=!show;$('#sub').classList.toggle('ko',capMode==='ko');
  document.querySelectorAll('[data-cap]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.cap===capMode));
  if(show&&!capT)capT=setInterval(capTick,150);else if(!show&&capT){clearInterval(capT);capT=null}};
-const setCap=m=>{const was=capMode;capMode=m;save('capMode',m);CAP.shown='';CAP.lastSent='';$('#subKo').innerHTML='';capLine=-1;
- toast({off:'자막을 껐어요',en:'영어 자막',ko:'영어 + 한글 자막'}[m]);
+const setCap=(m,quiet)=>{const was=capMode;capMode=m;if(!screenMode)save('capMode',m);CAP.shown='';CAP.lastSent='';$('#subKo').innerHTML='';capLine=-1;
+ if(!quiet)toast({off:'자막을 껐어요',en:'영어 자막',ko:'영어 + 한글 자막'}[m]);
+ if(out==='pc'&&pcCode){capUi();pcSend({a:'cap',m});return}
  // 껐다 켜면 소리 조각을 처음부터 다시 모아야 하므로 채널을 다시 연결
  if(was==='off'&&m!=='off'&&cur&&cur.cap&&(playing||want))play(cur);else capUi()};
 document.querySelectorAll('[data-cap]').forEach(b=>b.onclick=()=>b.dataset.cap!==capMode&&setCap(b.dataset.cap));
@@ -538,6 +571,65 @@ $('#wRes').addEventListener('click',e=>{const p=e.target.closest('[data-wp]'),a=
 // 내 채널 지우기: 카드 우클릭(길게 누르기)
 $('#grid').addEventListener('contextmenu',e=>{const s=e.target.closest('.st');if(!s||!/^w_/.test(s.dataset.id))return;e.preventDefault();
  mine=mine.filter(m=>m.id!==s.dataset.id);favs=favs.filter(f=>f!==s.dataset.id);save('mine',mine);save('favs',favs);render();toast('지웠어요')});
+
+// ── PC 화면으로 보내기 (폰) ───────────────────────────────
+let es=null,pcWait=null;
+const chMsg=s=>({id:s.id,n:s.n,d:s.d||'',g:s.g,c:s.c,cap:s.cap?1:0,u:s.u||'',kbs:s.kbs||''});
+const pcTimeout=(ms,msg)=>{clearTimeout(pcWait);pcWait=setTimeout(()=>{if(out!=='pc')return;want=false;setPlaying(false);setState('응답 없음');
+ $('#off').hidden=false;$('#off').textContent='PC TV 창이 응답하지 않아요';toast(msg)},ms)};
+const NOPC="PC의 'PC TV' 창이 켜져 있는지 확인해 주세요";
+const pcCast=s=>{if(!pcCode){setOut('phone');toast('PC 연결 링크로 이 앱을 한 번 열어 주세요');return}
+ setState('PC로 보내는 중…');$('#off').hidden=false;$('#off').textContent=`PC 화면으로 보내는 중… · ${s.n}`;pcListen();
+ pcSend({a:'cast',ch:chMsg(s),vol:muted?0:vol,cap:capMode,id:Date.now()});
+ // 라디오가 PC 스피커로 나오고 있으면 끔 (소리가 겹치지 않게)
+ fetch(`${NTFY}/${pcCode}-radio`,{method:'POST',body:JSON.stringify({a:'stop'})}).catch(()=>{});
+ pcTimeout(20000,NOPC)};
+const pcState=m=>{if(!m||m.t!=='st'||out!=='pc')return;clearTimeout(pcWait);
+ if(m.on){want=true;setPlaying(true);setState('PC 화면에서 보는 중');const s=byId(m.id);if(s&&s!==cur){cur=s;$('#nowName').innerHTML=`<em>${chNo(s)}</em>${esc(s.n)}`;$('#nowDesc').textContent=s.d||'';render()}
+  $('#off').hidden=false;$('#off').textContent=`PC 화면에서 보는 중 · ${m.title||''}`}
+ else{want=false;setPlaying(false);setState(m.re==='fail'?'PC에서 이 채널이 안 나와요':m.re==='ping'?'PC TV 창 연결됨':'');
+  $('#off').hidden=false;$('#off').textContent=m.re==='fail'?'PC에서 이 채널이 안 나와요':'PC TV 창 연결됨 · 채널을 누르면 PC에 나와요'}
+ $('#outPc').classList.toggle('live',!!m.on)};
+const pcListen=()=>{if(es||!pcCode||!window.EventSource)return;
+ es=new EventSource(`${NTFY}/${pcCode}-tv-st/sse`);
+ es.addEventListener('message',e=>{try{pcState(JSON.parse(JSON.parse(e.data).message))}catch(x){}})};
+const pcClose=()=>{if(es){es.close();es=null}clearTimeout(pcWait);$('#outPc').classList.remove('live')};
+const outUi=()=>{$('#outPhone').setAttribute('aria-pressed',out==='phone');$('#outPc').setAttribute('aria-pressed',out==='pc')};
+const setOut=o=>{if(o===out)return;
+ if(o==='pc'&&!pcCode){toast('PC 연결 링크로 이 앱을 한 번 열어 주세요');return}
+ const was=(playing||want)&&cur;if(was)stop();
+ out=o;save('out',o);outUi();capUi();
+ if(o==='pc'){stop();pcListen();setTimeout(()=>pcSend({a:'ping'}),300);$('#off').textContent='PC TV 창을 찾는 중…';pcTimeout(15000,NOPC)}
+ else{pcClose();$('#off').textContent='꺼짐 · 채널을 누르면 켜져요'}
+ if(was)setTimeout(()=>play(cur),o==='pc'?600:200)};
+$('#outPhone').onclick=()=>setOut('phone');$('#outPc').onclick=()=>setOut('pc');
+{const m=location.hash.match(/^#pc=([A-Za-z0-9_-]{6,64})$/);if(m&&!screenMode){pcCode=m[1];save('pcCode',pcCode);history.replaceState(null,'',location.pathname);out='pc';save('out','pc');toast('PC 화면과 연결했어요')}}
+if(screenMode||(out==='pc'&&!pcCode))out='phone';
+outUi();
+if(out==='pc'){pcListen();setTimeout(()=>pcSend({a:'ping'}),500);$('#off').textContent='PC TV 창을 찾는 중…'}
+
+// ── PC TV 창 (PC에서 ?screen 으로 연 이 페이지) ───────────────
+// 폰이 보낸 채널을 화면 가득 틀고 자막도 여기서 만듦. 상태는 바뀔 때만 알림 (ntfy 하루 제한 때문에 주기 보고 없음)
+function scrPub(re){if(!screenMode||!pcCode)return;const k=re+':'+(cur&&cur.id);if(k===scrPub.k&&re!=='ping')return;scrPub.k=k;ntfyPost('tv-st',{t:'st',on:re==='play',re,id:cur&&cur.id,title:cur?cur.n:'',vol}).catch(()=>{})}
+function scrIdle(){if(!screenMode)return;const o=$('#off');o.hidden=false;
+ o.innerHTML=pcCode?`<div><b id="scrClock"></b>PC TV · 폰의 '나만의 TV'에서 <u>PC 화면</u>을 고르고 채널을 누르세요</div>`:'<div>연결 코드가 없어요. PC TV 실행 파일로 열어 주세요.</div>';scrClock()}
+function scrClock(){const c=document.getElementById('scrClock');if(c)c.textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
+if(screenMode){document.body.classList.add('screenmode');document.title='PC TV';setInterval(scrClock,10000);
+ const seen=new Set();
+ const handle=m=>{if(!m||!m.a)return;
+  if(m.a==='cast'){const c=m.ch||{};let s=byId(c.id);
+   if(!s&&c.n&&(/^https:\/\//.test(c.u||'')||/^[A-Z0-9]{2,4}$/.test(c.kbs||'')))s={id:String(c.id||'x').slice(0,80),n:String(c.n).slice(0,60),d:String(c.d||'').slice(0,60),g:'mine',c:c.c||'gen',cap:c.cap?1:0,u:c.u||undefined,kbs:c.kbs||undefined};
+   if(!s)return;if(m.vol!=null)setVol(+m.vol,1);if(['off','en','ko'].includes(m.cap))capMode=m.cap;play(s)}
+  else if(m.a==='stop'){want=true;stop()}
+  else if(m.a==='vol')setVol(+m.v,1);
+  else if(m.a==='cap'&&['off','en','ko'].includes(m.m))setCap(m.m,1);
+  else if(m.a==='ping')scrPub(playing?'play':'ping')};
+ if(pcCode&&window.EventSource){const e=new EventSource(`${NTFY}/${pcCode}-tv/sse`);
+  e.addEventListener('message',x=>{try{const d=JSON.parse(x.data);if(seen.has(d.id))return;seen.add(d.id);handle(JSON.parse(d.message))}catch(err){}})}
+ // 마우스를 3초 안 움직이면 화살표 숨김
+ let idleT;const wake=()=>{document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>document.body.classList.add('idle'),3000)};
+ addEventListener('mousemove',wake);wake();
+ setTimeout(scrIdle,0)}
 
 const last=byId(load('last',''));if(last){cur=last;$('#nowName').innerHTML=`<em>${chNo(last)}</em>${esc(last.n)}`;$('#nowDesc').textContent=last.d||''}
 render();capUi();
