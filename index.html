@@ -72,19 +72,21 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .busy{position:absolute;z-index:3;right:3cqw;top:3cqw;font-size:clamp(11px,1.8cqw,15px);background:rgba(8,9,16,.6);border:1px solid rgba(255,255,255,.12);color:var(--ink);border-radius:99px;padding:3px 12px;pointer-events:none}
 .busy[hidden]{display:none}
 /* 자막: 화면 아래 2줄 */
-.sub{position:absolute;z-index:3;left:7cqw;right:7cqw;bottom:4.5cqw;text-align:center;pointer-events:none;font-size:clamp(13px,2.8cqw,36px);line-height:1.4;
+.sub{position:absolute;z-index:3;left:7cqw;right:7cqw;bottom:4.5cqw;text-align:center;pointer-events:none;font-size:clamp(13px,2.8cqw,36px);line-height:1.35;
  color:#fff;font-weight:650;letter-spacing:-.005em;text-shadow:0 0 1px #000,0 0 2px #000,0 1px 3px rgba(0,0,0,.95),0 0 14px rgba(0,0,0,.55)}
 .sub[hidden]{display:none}
 /* 글자 뒤 화면 아래쪽만 살짝 어둡게 (상자 대신) */
-.sub::before{content:"";position:absolute;z-index:-1;left:-7cqw;right:-7cqw;bottom:-4.5cqw;height:26cqw;background:linear-gradient(transparent,rgba(0,0,0,.28) 45%,rgba(0,0,0,.5));transition:opacity .8s}
-.subx{height:2.8em;overflow:hidden;transition:opacity .8s;-webkit-mask:linear-gradient(transparent,#000 .35em);mask:linear-gradient(transparent,#000 .35em)}
-.sub .nw{animation:wIn .45s ease-out both}
-@keyframes wIn{from{opacity:0;filter:blur(4px)}to{opacity:1;filter:none}}
-.sub.hush .subx,.sub.hush .subko,.sub.hush::before{opacity:0}
+.sub::before{content:"";position:absolute;z-index:-1;left:-7cqw;right:-7cqw;bottom:-4.5cqw;height:26cqw;background:linear-gradient(transparent,rgba(0,0,0,.28) 45%,rgba(0,0,0,.5));transition:opacity .4s}
+/* 자막은 영화 자막처럼 한 장(1~2줄)씩: 말을 시작할 때 통째로 나타나 다음 장까지 그대로 (글자가 움직이지 않음) */
+.subx{transition:opacity .25s}
+.sub .cue{display:inline-block;max-width:100%}
+.sub .cue.in{animation:cueIn .18s ease-out both}
+@keyframes cueIn{from{opacity:0;transform:translateY(.12em)}to{opacity:1;transform:none}}
+.sub.gap .subx,.sub.gap .subko,.sub.gap::before,.sub.hush .subx,.sub.hush .subko,.sub.hush::before{opacity:0}
 .sub .wait{text-shadow:none;font-weight:500;display:inline-flex;align-items:center;gap:.5em;background:rgba(6,7,12,.66);color:#c9cde0;font-size:.62em;padding:.3em .9em;border-radius:99px;border:1px solid rgba(255,255,255,.12)}
 .sub .wait::before{content:"AI";font:800 .8em var(--mono);padding:.1em .45em;border-radius:99px;background:var(--grad);color:#05060a}
-.subko{display:none;margin-top:.1em;height:1.4em;overflow:hidden;color:#9becff;transition:opacity .8s}
-.sub.ko .subx{height:1.4em;-webkit-mask:none;mask:none}.sub.ko .subko{display:block}
+.subko{display:none;margin-top:.15em;max-height:2.8em;overflow:hidden;color:#9becff;transition:opacity .25s}
+.sub.ko .subko{display:block}
 /* 채널 이름 */
 .now{display:flex;gap:12px;align-items:center;margin:18px 4px 0}
 .now-l{flex:1}
@@ -552,7 +554,7 @@ let capMode=load('capMode','en');
 const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
 const capWant=()=>!!(cur&&cur.cap&&capMode!=='off'&&out!=='pc');
 const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
-const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;$('#sub').classList.remove('hush');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
+const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;CAP.cues=null;CAP.shownS=null;CAP.tr=new Map();$('#sub').classList.remove('hush','gap');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
  $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
 const capDetach=()=>{CAP.run++};
 const boxType=u=>u.length>8?String.fromCharCode(u[4],u[5],u[6],u[7]):'';
@@ -587,7 +589,7 @@ const toWav=async bytes=>{const oc=new OfflineAudioContext(1,16000,16000);
 const joinU8=a=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let i=0;for(const x of a){o.set(x,i);i+=x.length}return o};
 // 오늘 무료 자막 사용량(Cloudflare 하루 한도)을 다 쓰면 15분 동안은 보내지 않고 안내만 (한국 시간 오전 9시에 다시 채워짐)
 let capQuota=0;
-const capQuotaMsg=()=>{CAP.segs=[];CAP.dom=[];CAP.shown='';$('#sub').classList.remove('hush');capError('오늘 무료 자막 사용량을 다 썼어요 · 오전 9시부터 다시 나와요')};
+const capQuotaMsg=()=>{CAP.segs=[];CAP.cues=null;CAP.dom=[];CAP.shown='';$('#sub').classList.remove('hush');capError('오늘 무료 자막 사용량을 다 썼어요 · 오전 9시부터 다시 나와요')};
 const capJob=async(j,run)=>{
  if(!j.init){return}
  if(Date.now()<capQuota){if(run===CAP.run)capQuotaMsg();return}
@@ -600,41 +602,77 @@ const capJob=async(j,run)=>{
   CAP.prompt=(CAP.prompt+' '+t).slice(-400);capSeg(j.start,j.end,t,k.words)}
  catch(e){if(e&&e.message==='quota'){capQuota=Date.now()+15*60000;if(run===CAP.run)capQuotaMsg();return}
   CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('자막 서버에 연결하지 못했어요')}};
-const capError=m=>{$('#subEn').innerHTML=`<span class="wait">${esc(m)}</span>`};
-const capIdle=()=>{if(!CAP.segs.length)$('#subEn').innerHTML='<span class="wait">말소리를 기다리는 중…</span>'};
+const capError=m=>{$('#sub').classList.remove('gap','hush');$('#subEn').innerHTML=`<span class="wait">${esc(m)}</span>`};
+const capIdle=()=>{if(!CAP.segs.length)capError('말소리를 기다리는 중…')};
 // 받아쓴 글: 단어별 시간(조각 안 기준)을 화면 재생 시간으로 바꿔 둠
 const capSeg=(start,end,text,wt)=>{const g={start,end,text,w:text.split(' ')};
- if(wt&&wt.length){g.w=[];g.ts=[];for(const[x,s]of wt){const c=String(x).replace(/^(\.{2,}|…)/,'').replace(/(\.{2,}|…)$/,'');if(!c)continue;g.w.push(c);g.ts.push(start+s)}if(!g.w.length)return}
- CAP.segs.push(g);CAP.segs.sort((a,b)=>a.start-b.start);const t=tv.currentTime;CAP.segs=CAP.segs.filter(g=>g.end>t-60)};
-// 0.15초마다: 지금까지 말한 단어를 2줄 창에 채움 (지금 줄이 아랫줄에 오게 위로 밀어 올림). 한글 켬: 영어 1줄 + 한글 1줄
-const CAP_LEAD=.3;let capLine=-1,capT=null;
-const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEAD;const w=[];
- for(const g of CAP.segs){if(g.start>t)break;
-  if(g.ts){for(let i=0;i<g.w.length;i++)if(g.ts[i]<=t)w.push(g.w[i])}
-  else{const k=t>=g.end?g.w.length:Math.ceil(g.w.length*(t-g.start)/Math.max(.5,g.end-g.start));for(let i=0;i<k;i++)w.push(g.w[i])}}
- // 3초 넘게 말이 없으면(광고·음악) 자막을 비움
- const lastEnd=CAP.segs.filter(g=>g.start<=t).reduce((a,g)=>Math.max(a,g.end),0);const quiet=lastEnd&&t-lastEnd>3;
- const key=w.length+':'+quiet;if(key===CAP.shown||!w.length)return;CAP.shown=key;
- const el=$('#subEn'),box=$('#subx'),sub=$('#sub');
- // 말이 멈추면 자막을 천천히 지움 (다음 말이 오면 이어서 다시 나타남)
- if(quiet){sub.classList.add('hush');return}sub.classList.remove('hush');
- const d=CAP.dom||[],have=CAP.base+d.length;let jump=false;
- const same=w.length>=have&&d.every((x,i)=>w[CAP.base+i]===x);
- if(!same||!el.querySelector('.w')||d.length>90){   // 처음이거나 앞 글이 바뀜: 최근 30단어로 새로 그림
-  CAP.base=Math.max(0,w.length-30);CAP.dom=w.slice(CAP.base);jump=true;
-  el.innerHTML=CAP.dom.map(x=>`<span class="w">${esc(x)} </span>`).join('')}
- else if(w.length>have){const add=w.slice(have);CAP.dom=d.concat(add);
-  el.insertAdjacentHTML('beforeend',add.map(x=>`<span class="w nw">${esc(x)} </span>`).join(''))}
- // 지금 줄이 맨 아래에 오게: 줄이 바뀔 때만 부드럽게 한 줄 밀어 올림
- const top=Math.max(0,el.offsetHeight-box.clientHeight);
- if(jump){capLine=top;box.scrollTop=top}else if(Math.abs(top-capLine)>2){capLine=top;box.scrollTo({top,behavior:'smooth'})}
- if(capMode==='ko'){const text=w.join(' '),m=text.match(/[^.?!]+[.?!]+(?=\s|$)/g),sent=m&&m[m.length-1].trim();
-  if(sent&&sent!==CAP.lastSent){CAP.lastSent=sent;const run=CAP.run;
-   fetch(`${WORKER}/translate?text=${encodeURIComponent(sent)}`).then(r=>r.json()).then(j=>{if(run===CAP.run&&j.ko)$('#subKo').innerHTML=`<span class="nw">${esc(j.ko)}</span>`}).catch(()=>{})}}};
+ if(wt&&wt.length){g.w=[];g.ts=[];g.te=[];for(const[x,s,e]of wt){const c=String(x).replace(/^(\.{2,}|…)/,'').replace(/(\.{2,}|…)$/,'');if(!c)continue;g.w.push(c);g.ts.push(start+s);g.te.push(start+(e>s?e:s+.3))}if(!g.w.length)return}
+ CAP.segs.push(g);CAP.segs.sort((a,b)=>a.start-b.start);const t=tv.currentTime;CAP.segs=CAP.segs.filter(g=>g.end>t-60);CAP.cues=null};
+// 자막 보여 주기: 영화·넷플릭스 자막처럼 '한 장(1~2줄)'씩. 받아쓴 단어를 말의 마디(문장 끝·쉼표·쉼)에서 끊어
+// 장으로 묶고, 말을 시작할 때 한 장이 통째로 나타나 다음 장까지 그대로 있음 → 글자가 움직이지 않아 읽기 쉬움
+const CAP_LEAD=.25;let capLine=-1,capT=null;
+const CONJ=new Set('and but or so because which who whom whose that when where while if although though since until unless whether'.split(' '));
+const PREP=new Set('in on at for with from by about into onto over after before under between through during without against across toward towards around'.split(' '));
+const STICK=new Set('a an the to of my your his her their our its this these those very more most such not will would can could should must is are was were be been being has have had do does did'.split(' '));
+const ABBR=/^(mr|mrs|ms|dr|st|jr|sr|vs|no|u\.s|u\.k|e\.g|i\.e)\.$/i;
+const wlen=ws=>ws.reduce((a,w)=>a+w.x.length+1,-1);
+const endS=x=>/[.?!]["')\]]*$/.test(x)&&!ABBR.test(x),endP=x=>/[,;:]["')\]]*$/.test(x);
+const lw=x=>x.toLowerCase().replace(/[^a-z']/g,'');
+// 한 줄에 들어가는 글자 수 (화면 너비·글자 크기로 재고, 읽기 좋게 최대 42자)
+let capCplKey='',capCplV=40;
+const capCpl=()=>{const el=$('#subx'),w=el.clientWidth,cs=getComputedStyle($('#sub')),k=w+'|'+cs.fontSize;if(k===capCplKey)return capCplV;capCplKey=k;
+ const cx=(capCpl.cv||(capCpl.cv=document.createElement('canvas'))).getContext('2d');cx.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+ const t='The quick brown fox, said Mr. Kim, jumps over 12 lazy dogs today.',cw=cx.measureText(t).width/t.length||8;
+ capCplV=Math.max(18,Math.min(42,Math.floor(w*.94/cw)));CAP.cues=null;return capCplV};
+const capCues=()=>{const cpl=capCpl();if(CAP.cues)return CAP.cues;
+ const max=capMode==='ko'?cpl:cpl*2-2,W=[];   // 영어+한글: 영어 1줄 + 한글 1줄
+ for(const g of CAP.segs){if(g.ts)g.w.forEach((x,i)=>W.push({x,s:g.ts[i],e:g.te?g.te[i]:g.ts[i]+.3}));
+  else{const n=Math.max(1,g.w.length),d=(g.end-g.start)/n;g.w.forEach((x,i)=>W.push({x,s:g.start+i*d,e:g.start+(i+1)*d}))}}
+ W.sort((a,b)=>a.s-b.s);
+ const cues=[];let c=[];const push=()=>{if(c.length)cues.push(c);c=[]};
+ for(const w of W){
+  if(c.length){const p=c[c.length-1],L=wlen(c),gap=w.s-p.e;
+   if(gap>.8||(endS(p.x)&&L>=10)||(endP(p.x)&&L>=max*.55))push();
+   else if(L+1+w.x.length>max){   // 꽉 참: 쉼표 뒤나 접속사·전치사 앞(장의 40% 이후)에서 끊고 남은 말은 다음 장으로
+    let k=c.length,ks=1e9;for(let j=c.length;j>0;j--){const l=wlen(c.slice(0,j));if(l<max*.4)break;
+     const sc=(endP(c[j-1].x)?-30:0)+(j<c.length&&CONJ.has(lw(c[j].x))?-15:0)+(j<c.length&&PREP.has(lw(c[j].x))?-8:0)+(STICK.has(lw(c[j-1].x))?20:0)-l*.2;
+     if(sc<ks){ks=sc;k=j}}
+    const tail=c.splice(k);push();c=tail}}
+  c.push(w)}
+ push();
+ const out=cues.map(ws=>({s:ws[0].s,e:ws[ws.length-1].e,text:ws.map(w=>w.x).join(' '),ws}));
+ // 보이는 시간: 말을 시작할 때부터 다음 장 직전까지. 말이 짧아도 읽을 시간(초당 17자, 최소 1.3초)은 둠
+ out.forEach((q,i)=>{const nx=out[i+1];q.hide=Math.max(q.e+.7,q.s+Math.max(1.3,q.text.length/17));if(nx)q.hide=Math.min(q.hide,nx.s)});
+ return CAP.cues=out};
+// 한 장을 두 줄로: 길이를 고르게(아랫줄이 조금 길게), 말의 마디(쉼표·접속사·전치사 앞)에서, the·a·to 같은 말이 줄 끝에 남지 않게
+const capLines=(ws,cpl)=>{const t=ws.map(w=>w.x),all=t.join(' ');if(all.length<=cpl||t.length<2)return[all];
+ let best=1,bs=1e9;for(let k=1;k<t.length;k++){const a=t.slice(0,k).join(' ').length,b=t.slice(k).join(' ').length;
+  let sc=Math.max(0,Math.abs(a-b)-cpl*.33)+(a>b?2:0)+(a>cpl||b>cpl?100+Math.max(a,b):0);
+  if(endP(t[k-1])||endS(t[k-1]))sc-=10;if(CONJ.has(lw(t[k])))sc-=6;else if(PREP.has(lw(t[k])))sc-=5;if(STICK.has(lw(t[k-1])))sc+=12;
+  if(sc<bs){bs=sc;best=k}}
+ return[t.slice(0,best).join(' '),t.slice(best).join(' ')]};
+const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEAD,cues=capCues();
+ let q=null;for(const c of cues){if(c.s>t)break;if(t<c.hide)q=c}
+ const sub=$('#sub'),el=$('#subEn');
+ // 말이 없는 동안(장 사이·광고·음악)은 자막을 비움
+ if(!q){if(CAP.shown&&CAP.shown!=='gap'){CAP.shown='gap';sub.classList.add('gap')}return}
+ const key=q.s.toFixed(2)+'|'+q.text;if(key===CAP.shown)return;
+ const grow=CAP.shownS===q.s&&CAP.shown!=='gap';   // 같은 장에 뒷말이 이어 붙은 것: 깜빡이지 않게 그대로 바꿈
+ CAP.shown=key;CAP.shownS=q.s;sub.classList.remove('gap','hush');
+ el.innerHTML=`<span class="cue${grow?'':' in'}">${capLines(q.ws,capCpl()).map(esc).join('<br>')}</span>`;
+ if(capMode==='ko'){const ko=$('#subKo');if(!grow)ko.innerHTML='';capKo(q,ko);
+  for(const n of cues)if(n.s>q.s&&n.s<t+20)capKo(n)}};   // 다음 장들도 미리 번역해 둠
+// 영어+한글: 장마다 한 번씩 번역 (같은 글은 다시 묻지 않음)
+const capKo=(q,el)=>{const tr=CAP.tr||(CAP.tr=new Map()),run=CAP.run,v=tr.get(q.text);
+ const put=ko=>{if(el&&ko&&run===CAP.run&&CAP.shown.endsWith('|'+q.text))el.innerHTML=`<span class="cue in">${esc(ko)}</span>`};
+ if(typeof v==='string'){put(v);return}if(v){v.then(put);return}
+ if(tr.size>300)tr.clear();
+ const pr=fetch(`${WORKER}/translate?text=${encodeURIComponent(q.text)}`).then(r=>r.json()).then(j=>{const ko=String(j.ko||'').trim();tr.set(q.text,ko);return ko}).catch(()=>{tr.delete(q.text);return ''});
+ tr.set(q.text,pr);pr.then(put)};
 const capUi=()=>{const show=capWant()&&(playing||want);$('#sub').hidden=!show;$('#sub').classList.toggle('ko',capMode==='ko');
  document.querySelectorAll('[data-cap]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.cap===capMode));
  if(show&&!capT)capT=setInterval(capTick,150);else if(!show&&capT){clearInterval(capT);capT=null}};
-const setCap=(m,quiet)=>{const was=capMode;capMode=m;if(!screenMode)save('capMode',m);CAP.shown='';CAP.lastSent='';$('#subKo').innerHTML='';capLine=-1;
+const setCap=(m,quiet)=>{const was=capMode;capMode=m;if(!screenMode)save('capMode',m);CAP.shown='';CAP.cues=null;CAP.lastSent='';$('#subKo').innerHTML='';capLine=-1;
  if(!quiet)toast({off:'자막을 껐어요',en:'영어 자막',ko:'영어 + 한글 자막'}[m]);
  if(out==='pc'&&pcCode){capUi();pcSend({a:'cap',m});return}
  // 껐다 켜면 소리 조각을 처음부터 다시 모아야 하므로 채널을 다시 연결
