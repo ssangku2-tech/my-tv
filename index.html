@@ -618,6 +618,9 @@ const ABBR=/^(mr|mrs|ms|dr|st|jr|sr|vs|no|u\.s|u\.k|e\.g|i\.e)\.$/i;
 const wlen=ws=>ws.reduce((a,w)=>a+w.x.length+1,-1);
 const endS=x=>/[.?!]["')\]]*$/.test(x)&&!ABBR.test(x),endP=x=>/[,;:]["')\]]*$/.test(x);
 const lw=x=>x.toLowerCase().replace(/[^a-z']/g,'');
+// 붙여 둘 두 단어: 이름처럼 대문자로 시작하는 말이 이어짐(Formula One, Mr. Kim) · 숫자나 소유격 뒤의 명사(five years, years' time)
+const NUMW=/^(\d[\d,.]*%?|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion)$/i;
+const glue=(a,b)=>!endP(a)&&!endS(a)&&((/^[A-Z]/.test(a)&&/^[A-Z0-9]/.test(b))||(NUMW.test(a.replace(/[^\w%,.]/g,''))||/'s?$/.test(a))&&/^[a-z]/.test(b)&&!STICK.has(lw(b))&&!CONJ.has(lw(b))&&!PREP.has(lw(b)));
 // 한 줄에 들어가는 글자 수 (화면 너비·글자 크기로 재고, 읽기 좋게 최대 42자)
 let capCplKey='',capCplV=40;
 const capCpl=()=>{const el=$('#subx'),w=el.clientWidth,cs=getComputedStyle($('#sub')),k=w+'|'+cs.fontSize;if(k===capCplKey)return capCplV;capCplKey=k;
@@ -635,7 +638,7 @@ const capCues=()=>{const cpl=capCpl();if(CAP.cues)return CAP.cues;
    if(gap>.8||(endS(p.x)&&L>=10)||(endP(p.x)&&L>=max*.55))push();
    else if(L+1+w.x.length>max){   // 꽉 참: 쉼표 뒤나 접속사·전치사 앞(장의 40% 이후)에서 끊고 남은 말은 다음 장으로
     let k=c.length,ks=1e9;for(let j=c.length;j>0;j--){const l=wlen(c.slice(0,j));if(l<max*.4)break;
-     const sc=(endP(c[j-1].x)?-30:0)+(j<c.length&&CONJ.has(lw(c[j].x))?-15:0)+(j<c.length&&PREP.has(lw(c[j].x))?-8:0)+(STICK.has(lw(c[j-1].x))?20:0)-l*.2;
+     const sc=(endP(c[j-1].x)?-30:0)+(j<c.length&&CONJ.has(lw(c[j].x))?-15:0)+(j<c.length&&PREP.has(lw(c[j].x))?-8:0)+(STICK.has(lw(c[j-1].x))?20:0)+(j<c.length&&glue(c[j-1].x,c[j].x)?20:0)-l*.2;
      if(sc<ks){ks=sc;k=j}}
     const tail=c.splice(k);push();c=tail}}
   c.push(w)}
@@ -648,7 +651,7 @@ const capCues=()=>{const cpl=capCpl();if(CAP.cues)return CAP.cues;
 const capLines=(ws,cpl)=>{const t=ws.map(w=>w.x),all=t.join(' ');if(all.length<=cpl||t.length<2)return[all];
  let best=1,bs=1e9;for(let k=1;k<t.length;k++){const a=t.slice(0,k).join(' ').length,b=t.slice(k).join(' ').length;
   let sc=Math.max(0,Math.abs(a-b)-cpl*.33)+(a>b?2:0)+(a>cpl||b>cpl?100+Math.max(a,b):0);
-  if(endP(t[k-1])||endS(t[k-1]))sc-=10;if(CONJ.has(lw(t[k])))sc-=6;else if(PREP.has(lw(t[k])))sc-=5;if(STICK.has(lw(t[k-1])))sc+=12;
+  if(endP(t[k-1])||endS(t[k-1]))sc-=10;if(CONJ.has(lw(t[k])))sc-=6;else if(PREP.has(lw(t[k])))sc-=5;if(STICK.has(lw(t[k-1])))sc+=12;if(glue(t[k-1],t[k]))sc+=12;
   if(sc<bs){bs=sc;best=k}}
  return[t.slice(0,best).join(' '),t.slice(best).join(' ')]};
 const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEAD,cues=capCues();
