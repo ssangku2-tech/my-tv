@@ -10,6 +10,7 @@
 - **해외 (영어 자막)**: Arirang TV, NBC News, CBS News, LiveNOW from FOX, Scripps News, CBC News, GB News, Al Jazeera English, DW English, France 24 English, NHK WORLD-JAPAN, CNA, TRT World, CGTN, Africanews
 - **영화 (영어 자막)**: AMC Thrillers, MovieSphere, Hallmark Movies & More, Scares by Shudder, OuterSphere, Charge!, Gravitas Movies, 24 Hour Free Movies, Maverick Black Cinema, GREAT! movies
 - **스포츠 (영어 자막)**: NBC Sports NOW, Fox Sports News, FIFA+, PGA Tour, Tennis Channel, Eurovision Sport, Stadium, talkSPORT, Rally TV, Monster Jam (모두 광고가 붙는 무료 공식 채널, 큰 경기 생중계는 없음)
+- **다큐멘터리 (영어 자막)**: BBC Earth, Documentary+, MagellanTV Now, NatureTime, WildEarth, INWILD, Love The Planet, WaterBear, Adventure Earth, Danger TV, CNA Originals, CGTN Documentary, Wedo Big Stories, Get.factual
 - **전 세계 찾기**: iptv-org 공개 목록의 인터넷 TV 채널을 이름으로 찾아 보고 내 채널에 추가
 
 ## 기능

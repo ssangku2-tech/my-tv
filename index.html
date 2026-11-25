@@ -335,6 +335,21 @@ const ST=[
  {id:'talksport',cap:1,n:'talkSPORT',g:'en',c:'sport',d:'영국 · 스포츠 토크',u:'https://af7a8b4e.wurl.com/master/f36d25e7e52f1ba8d7e56eb859c636563214f541/TEctZ2JfdGFsa1NQT1JUX0hMUw/playlist.m3u8'},
  {id:'rally',cap:1,n:'Rally TV',g:'en',c:'sport',d:'세계 · 자동차 랠리',u:'https://rally-tv-live.akamaized.net/hls/live/2117704/RallyTV-Pri/master.m3u8'},
  {id:'monsterjam',cap:1,n:'Monster Jam',g:'en',c:'sport',d:'미국 · 몬스터 트럭',u:'https://wurlspacemob.global.transmit.live/hls/6791101f0b2848c81efe74d7/v1/answermedia_monsterjam_1/vizio_us/latest/main/hls/playlist.m3u8'},
+ // 다큐멘터리 (영어, 자막)
+ {id:'bbcearth',cap:1,n:'BBC Earth',g:'en',c:'doc',d:'영국 BBC · 자연·과학',u:'https://amg00793-amg00793c6-vizio-us-2670.playouts.now.amagi.tv/playlist/amg00793-bbcstudios-bbcearthaall-vizious/playlist.m3u8'},
+ {id:'docplus',cap:1,n:'Documentary+',g:'en',c:'doc',d:'미국 · 화제의 다큐',u:'https://ef79b15c8c7c46c7a9de9d33001dbd07.mediatailor.us-west-2.amazonaws.com/v1/master/ba62fe743df0fe93366eba3a257d792884136c7f/LINEAR-859-DOCUMENTARYPLUS-DOCUMENTARYPLUS/mt/documentaryplus/859/hls/master/playlist.m3u8'},
+ {id:'magellan',cap:1,n:'MagellanTV Now',g:'en',c:'doc',d:'미국 · 역사·과학·우주',u:'https://amg00376-magellan-amg00376c5-samsung-au-1708.playouts.now.amagi.tv/playlist/amg00376-magellantv-magellantvnowww-samsungau/playlist.m3u8'},
+ {id:'naturetime',cap:1,n:'NatureTime',g:'en',c:'doc',d:'캐나다 · 야생 동물',u:'https://bamusa-naturetime-emea-eng-rakuten.amagi.tv/playlist.m3u8'},
+ {id:'wildearth',cap:1,n:'WildEarth',g:'en',c:'doc',d:'남아공 · 사파리 생중계',u:'https://dqga3jatxofgx.cloudfront.net/WildEarth.m3u8'},
+ {id:'inwild',cap:1,n:'INWILD',g:'en',c:'doc',d:'네덜란드 · 야생 동물',u:'https://amg00861-terninternation-inwild-samsunguk-w5wic.amagi.tv/playlist/amg00861-terninternation-inwild-samsunguk/playlist.m3u8'},
+ {id:'lovetheplanet',cap:1,n:'Love The Planet',g:'en',c:'doc',d:'영국 · 자연·환경',u:'https://amg01821-lovetvchannels-lovetheplanetuksamsung-samsunguk-apopw.amagi.tv/playlist/amg01821-lovetvchannels-lovetheplanetuksamsung-samsunguk/playlist.m3u8'},
+ {id:'waterbear',cap:1,n:'WaterBear',g:'en',c:'doc',d:'영국 · 환경·자연',u:'https://amg01415-waterbearnetwor-waterbear-samsunguk-1h0y8.amagi.tv/playlist/amg01415-waterbearnetwor-waterbear-samsunguk/playlist.m3u8'},
+ {id:'adventureearth',cap:1,n:'Adventure Earth',g:'en',c:'doc',d:'독일 · 모험·여행',u:'https://a57e9c69976649b582a8d7604c00e69a.mediatailor.us-east-1.amazonaws.com/v1/master/44f73ba4d03e9607dcd9bebdcb8494d86964f1d8/RlaxxTV-eu_AdventureEarth/playlist.m3u8'},
+ {id:'dangertv',cap:1,n:'Danger TV',g:'en',c:'doc',d:'미국 · 극한 직업·모험',u:'https://wurldangertv.global.transmit.live/hls/6862ae41cebca70ae8b8c068/v1/dangertv/vizio_us/latest/main/hls/playlist.m3u8'},
+ {id:'cnaorig',cap:1,n:'CNA Originals',g:'en',c:'doc',d:'싱가포르 · 아시아 다큐',u:'https://amg01082-cna-amg01082c1-rlaxx-us-11304.playouts.now.amagi.tv/playlist.m3u8'},
+ {id:'cgtndoc',cap:1,n:'CGTN Documentary',g:'en',c:'doc',d:'중국 · 영어 다큐',u:'https://amg00405-rakutentv-cgtndocumentary-rakuten-0ql8j.amagi.tv/master.m3u8'},
+ {id:'wedo',cap:1,n:'Wedo Big Stories',g:'en',c:'doc',d:'스위스 · 인물·사회 다큐',u:'https://amg00735-videosolutionsa-wedobigdocs-ono-0urlz.amagi.tv/playlist/amg00735-videosolutionsa-wedobigdocs-ono/playlist.m3u8'},
+ {id:'getfactual',cap:1,n:'Get.factual',g:'en',c:'doc',d:'영국 · 사실 다큐',u:'https://d1nhni5l2n8hjt.cloudfront.net/gf.m3u8'},
 ];
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -363,7 +378,7 @@ const byId=id=>all().find(s=>s.id===id);
 const chNo=s=>all().indexOf(s)+1;
 
 // 목록
-const CATS=[['all','전체'],['kr','한국'],['en','해외'],['gen','종합·예능'],['news','뉴스'],['movie','영화'],['sport','스포츠'],['edu','교양']];
+const CATS=[['all','전체'],['kr','한국'],['en','해외'],['gen','종합·예능'],['news','뉴스'],['movie','영화'],['sport','스포츠'],['doc','다큐'],['edu','교양']];
 const listNow=()=>{let l=all();
  if(cat==='kr'||cat==='en')l=l.filter(s=>s.g===cat);else if(cat==='mine')l=l.filter(s=>s.g==='mine');else if(cat!=='all')l=l.filter(s=>s.c===cat);
  return l};
@@ -570,8 +585,12 @@ const toWav=async bytes=>{const oc=new OfflineAudioContext(1,16000,16000);
  v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
  new Int16Array(buf,44).set(pcm);return new Uint8Array(buf)};
 const joinU8=a=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let i=0;for(const x of a){o.set(x,i);i+=x.length}return o};
+// 오늘 무료 자막 사용량(Cloudflare 하루 한도)을 다 쓰면 15분 동안은 보내지 않고 안내만 (한국 시간 오전 9시에 다시 채워짐)
+let capQuota=0;
+const capQuotaMsg=()=>{CAP.segs=[];CAP.dom=[];CAP.shown='';$('#sub').classList.remove('hush');capError('오늘 무료 자막 사용량을 다 썼어요 · 오전 9시부터 다시 나와요')};
 const capJob=async(j,run)=>{
  if(!j.init){return}
+ if(Date.now()<capQuota){if(run===CAP.run)capQuotaMsg();return}
  let body;try{body=await toWav(joinU8([j.init,...j.parts]))}catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('이 채널은 소리를 읽지 못해 자막을 만들 수 없어요');return}
  try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);   // 서버가 늦거나 끊겨도 자막 줄이 멈추지 않게 20초면 포기
   const r=await fetch(`${WORKER}/transcribe?prompt=${encodeURIComponent(CAP.prompt.slice(-200))}`,{method:'POST',body,signal:ac.signal}).finally(()=>clearTimeout(to));
@@ -579,7 +598,8 @@ const capJob=async(j,run)=>{
   const t=capClean(k.text);if(!t){capIdle();return}
   if(CAP.segs.some(g=>g.text===t&&Math.abs(g.start-j.start)<15)){CAP.prompt='';return}   // 앞 글을 되풀이하는 받아쓰기 헛소리
   CAP.prompt=(CAP.prompt+' '+t).slice(-400);capSeg(j.start,j.end,t,k.words)}
- catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('자막 서버에 연결하지 못했어요')}};
+ catch(e){if(e&&e.message==='quota'){capQuota=Date.now()+15*60000;if(run===CAP.run)capQuotaMsg();return}
+  CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('자막 서버에 연결하지 못했어요')}};
 const capError=m=>{$('#subEn').innerHTML=`<span class="wait">${esc(m)}</span>`};
 const capIdle=()=>{if(!CAP.segs.length)$('#subEn').innerHTML='<span class="wait">말소리를 기다리는 중…</span>'};
 // 받아쓴 글: 단어별 시간(조각 안 기준)을 화면 재생 시간으로 바꿔 둠
