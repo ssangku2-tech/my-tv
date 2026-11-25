@@ -537,7 +537,7 @@ const capFlush=()=>{const b=CAP.batch;if(!b.length)return;CAP.batch=[];
  const key=Math.round(b[0].start*10);if(CAP.done.has(key))return;CAP.done.add(key);   // 같은 조각을 두 번 받으면(화질 바뀜 등) 한 번만
  CAP.q.push({start:b[0].start,end:b[b.length-1].start+b[b.length-1].dur,init:b[0].init,parts:b.flatMap(y=>y.parts)});
  CAP.q.sort((a,b)=>a.start-b.start);capRunQ()};
-const capRunQ=()=>{while(CAP.busy<2&&CAP.q.length){const j=CAP.q.shift();
+const capRunQ=()=>{while(CAP.busy<3&&CAP.q.length){const j=CAP.q.shift();
   if(j.end<tv.currentTime-1&&tv.currentTime>0)continue;CAP.busy++;capJob(j,CAP.run).finally(()=>{CAP.busy--;capRunQ()})}};
 // mp4 소리 조각 → 16kHz 한 채널 WAV
 const toWav=async bytes=>{const oc=new OfflineAudioContext(1,16000,16000);
@@ -551,7 +551,8 @@ const joinU8=a=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);
 const capJob=async(j,run)=>{
  if(!j.init){return}
  let body;try{body=await toWav(joinU8([j.init,...j.parts]))}catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('이 채널은 소리를 읽지 못해 자막을 만들 수 없어요');return}
- try{const r=await fetch(`${WORKER}/transcribe?prompt=${encodeURIComponent(CAP.prompt.slice(-200))}`,{method:'POST',body});
+ try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);   // 서버가 늦거나 끊겨도 자막 줄이 멈추지 않게 20초면 포기
+  const r=await fetch(`${WORKER}/transcribe?prompt=${encodeURIComponent(CAP.prompt.slice(-200))}`,{method:'POST',body,signal:ac.signal}).finally(()=>clearTimeout(to));
   const k=await r.json();if(run!==CAP.run)return;if(k.error)throw new Error(k.error);CAP.ok++;
   const t=capClean(k.text);if(!t){capIdle();return}
   if(CAP.segs.some(g=>g.text===t&&Math.abs(g.start-j.start)<15)){CAP.prompt='';return}   // 앞 글을 되풀이하는 받아쓰기 헛소리
