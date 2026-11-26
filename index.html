@@ -530,7 +530,7 @@ let wake=null,wakeAsk=false;
 const wakeUi=on=>{if(on){if(wake||wakeAsk||!('wakeLock' in navigator)||document.visibilityState!=='visible')return;wakeAsk=true;
   navigator.wakeLock.request('screen').then(w=>{wakeAsk=false;wake=w;w.addEventListener('release',()=>{if(wake===w)wake=null});if(!playing){w.release().catch(()=>{});wake=null}}).catch(()=>{wakeAsk=false})}
  else if(wake){const w=wake;wake=null;w.release().catch(()=>{})}};
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wakeUi(playing)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){wakeUi(playing);if(typeof capRunQ==='function')capRunQ()}});
 
 // 끄기 버튼 + 취침 타이머 (마지막 30초 동안 소리가 서서히 작아짐)
 let sleepAt=0,baseVol=null;
@@ -554,34 +554,40 @@ let capMode=load('capMode','en');
 const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
 const capWant=()=>!!(cur&&cur.cap&&capMode!=='off'&&out!=='pc');
 const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
-const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;CAP.cues=null;CAP.shownS=null;CAP.tr=new Map();$('#sub').classList.remove('hush','gap');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
+const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;CAP.cues=null;CAP.shownS=null;CAP.tr=new Map();$('#sub').classList.remove('hush','gap');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.playAt=0;CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
  $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
 const capDetach=()=>{CAP.run++};
 const boxType=u=>u.length>8?String.fromCharCode(u[4],u[5],u[6],u[7]):'';
 const capAttach=h=>{const run=CAP.run;
- h.on(Hls.Events.BUFFER_APPENDING,(e,d)=>{if(run!==CAP.run||!capWant())return;if(d.type!=='audio'&&d.type!=='audiovideo')return;
+ h.on(Hls.Events.BUFFER_APPENDING,(e,d)=>{if(run!==CAP.run||!capWant()||document.hidden)return;if(d.type!=='audio'&&d.type!=='audiovideo')return;
   const u=new Uint8Array(d.data.buffer?d.data.buffer.slice(d.data.byteOffset,d.data.byteOffset+d.data.byteLength):d.data);const b=boxType(u);
   if(b==='ftyp'||b==='moov'){CAP.init[d.type]=u;return}
   const f=d.frag;if(!f||f.sn==='initSegment')return;const key=f.type+':'+f.sn;
   let x=CAP.frags.get(key);if(!x){x={type:d.type,parts:[],init:CAP.init[d.type]};CAP.frags.set(key,x)}x.parts.push(u)});
  h.on(Hls.Events.FRAG_BUFFERED,(e,d)=>{if(run!==CAP.run)return;const f=d.frag,key=f.type+':'+f.sn,x=CAP.frags.get(key);if(!x)return;CAP.frags.delete(key);
   x.start=f.start;x.dur=f.duration;capBatch(x)})};
-// 조각을 4초 이상 모아 한 번에 받아쓰기 (짧으면 문맥이 없어 잘 틀림)
+// 조각을 12초쯤 모아 한 번에 받아쓰기: 문맥이 길수록 잘 맞고, 무료 받아쓰기(Groq)는 한 번에 최소 10초로 세므로 사용량도 아낌.
+// 다만 곧 화면에 나올 소리면(8초 안) 4초만 모여도 바로 보냄 → 자막이 늦지 않게
+const CAP_BATCH=12;
 const capBatch=x=>{if(!capWant())return;
  if(x.start+x.dur<tv.currentTime-1&&tv.currentTime>0)return;   // 이미 지나간 소리
  const b=CAP.batch,l=b[b.length-1];
  if(l&&(Math.abs(l.start+l.dur-x.start)>.6||l.init!==x.init))capFlush();
- CAP.batch.push(x);const tot=CAP.batch.reduce((a,y)=>a+y.dur,0);if(tot>=4)capFlush()};
+ CAP.batch.push(x);capDue()};
+const capDue=()=>{const b=CAP.batch;if(!b.length)return;const tot=b.reduce((a,y)=>a+y.dur,0),ahead=b[0].start-tv.currentTime;
+ if(tot>=CAP_BATCH||(tot>=4&&ahead<8)||ahead<3)capFlush()};
 const capFlush=()=>{const b=CAP.batch;if(!b.length)return;CAP.batch=[];
  const key=Math.round(b[0].start*10);if(CAP.done.has(key))return;CAP.done.add(key);   // 같은 조각을 두 번 받으면(화질 바뀜 등) 한 번만
  CAP.q.push({start:b[0].start,end:b[b.length-1].start+b[b.length-1].dur,init:b[0].init,parts:b.flatMap(y=>y.parts)});
  CAP.q.sort((a,b)=>a.start-b.start);capRunQ()};
-const capRunQ=()=>{while(CAP.busy<3&&CAP.q.length){const j=CAP.q.shift();
+const capRunQ=()=>{if(!CAP.playAt||Date.now()-CAP.playAt<2000||document.hidden)return;
+ while(CAP.busy<3&&CAP.q.length){const j=CAP.q.shift();
   if(j.end<tv.currentTime-1&&tv.currentTime>0)continue;CAP.busy++;capJob(j,CAP.run).finally(()=>{CAP.busy--;capRunQ()})}};
 // mp4 소리 조각 → 16kHz 한 채널 WAV
 const toWav=async bytes=>{const oc=new OfflineAudioContext(1,16000,16000);
- const ab=await oc.decodeAudioData(bytes.buffer.slice(0));const n=Math.min(ab.length,16000*12),ch=ab.numberOfChannels;
- const pcm=new Int16Array(n);for(let i=0;i<n;i++){let s=0;for(let c=0;c<ch;c++)s+=ab.getChannelData(c)[i];s/=ch;pcm[i]=Math.max(-1,Math.min(1,s))*32767}
+ const ab=await oc.decodeAudioData(bytes.buffer.slice(0));const n=Math.min(ab.length,16000*20),ch=ab.numberOfChannels;
+ const pcm=new Int16Array(n);let e2=0;for(let i=0;i<n;i++){let s=0;for(let c=0;c<ch;c++)s+=ab.getChannelData(c)[i];s/=ch;e2+=s*s;pcm[i]=Math.max(-1,Math.min(1,s))*32767}
+ if(!n||Math.sqrt(e2/n)<.003)return null;   // 거의 소리가 없음(-50dB 아래): 받아쓸 말이 없으니 보내지 않음
  const buf=new ArrayBuffer(44+n*2),v=new DataView(buf),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
  w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
  v.setUint32(24,16000,true);v.setUint32(28,32000,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
@@ -593,7 +599,7 @@ const capQuotaMsg=()=>{CAP.segs=[];CAP.cues=null;CAP.dom=[];CAP.shown='';$('#sub
 const capJob=async(j,run)=>{
  if(!j.init){return}
  if(Date.now()<capQuota){if(run===CAP.run)capQuotaMsg();return}
- let body;try{body=await toWav(joinU8([j.init,...j.parts]))}catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('이 채널은 소리를 읽지 못해 자막을 만들 수 없어요');return}
+ let body;try{body=await toWav(joinU8([j.init,...j.parts]));if(!body){capIdle();return}}catch(e){CAP.fail++;if(run===CAP.run&&CAP.fail>=4&&!CAP.ok)capError('이 채널은 소리를 읽지 못해 자막을 만들 수 없어요');return}
  try{const ac=new AbortController(),to=setTimeout(()=>ac.abort(),20000);   // 서버가 늦거나 끊겨도 자막 줄이 멈추지 않게 20초면 포기
   const r=await fetch(`${WORKER}/transcribe?prompt=${encodeURIComponent(CAP.prompt.slice(-200))}`,{method:'POST',body,signal:ac.signal}).finally(()=>clearTimeout(to));
   const k=await r.json();if(run!==CAP.run)return;if(k.error)throw new Error(k.error);CAP.ok++;
@@ -654,7 +660,8 @@ const capLines=(ws,cpl)=>{const t=ws.map(w=>w.x),all=t.join(' ');if(all.length<=
   if(endP(t[k-1])||endS(t[k-1]))sc-=10;if(CONJ.has(lw(t[k])))sc-=6;else if(PREP.has(lw(t[k])))sc-=5;if(STICK.has(lw(t[k-1])))sc+=12;if(glue(t[k-1],t[k]))sc+=12;
   if(sc<bs){bs=sc;best=k}}
  return[t.slice(0,best).join(' '),t.slice(best).join(' ')]};
-const capTick=()=>{if(!capWant()||!playing)return;const t=tv.currentTime+CAP_LEAD,cues=capCues();
+const capTick=()=>{if(!capWant()||!playing)return;if(!CAP.playAt&&tv.currentTime>0&&!tv.paused)CAP.playAt=Date.now();capDue();capRunQ();
+ const t=tv.currentTime+CAP_LEAD,cues=capCues();
  let q=null;for(const c of cues){if(c.s>t)break;if(t<c.hide)q=c}
  const sub=$('#sub'),el=$('#subEn');
  // 말이 없는 동안(장 사이·광고·음악)은 자막을 비움

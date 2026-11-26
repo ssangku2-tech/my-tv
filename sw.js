@@ -1,6 +1,6 @@
 // 나만의 TV service worker: 앱 화면은 캐시해서 빨리 뜨고 오프라인에서도 열리게,
 // 방송 영상·방송사 API·자막 워커는 절대 캐시하지 않음.
-const CACHE = 'my-tv-v12';
+const CACHE = 'my-tv-v13';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png',
   'https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js'];
 
