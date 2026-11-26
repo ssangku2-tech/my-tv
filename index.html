@@ -553,7 +553,8 @@ setInterval(tick,1000);tick();
 let capMode=load('capMode','en');
 const CAP={run:0,done:new Set(),init:{},frags:new Map(),batch:[],q:[],busy:0,segs:[],prompt:'',shown:'',lastSent:'',ok:0,fail:0,raw:0};
 const capWant=()=>!!(cur&&cur.cap&&capMode!=='off'&&out!=='pc');
-const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)?'':t};
+const capRep=t=>{const w=t.toLowerCase().match(/[a-z0-9']+/g)||[];return w.length>=4&&new Set(w).size/w.length<.3};   // "A A A A A" 같은 되풀이 헛소리
+const capClean=t=>{t=String(t||'').replace(/\s+/g,' ').trim().replace(/^(\.{2,}|…)\s*/,'').replace(/\s*(\.{2,}|…)$/,'');return /^(thank you|thanks for watching|you|bye|\.+)[.!]*$/i.test(t)||capRep(t)?'':t};
 const capReset=()=>{CAP.run++;CAP.dom=[];CAP.base=0;CAP.cues=null;CAP.shownS=null;CAP.tr=new Map();$('#sub').classList.remove('hush','gap');CAP.done.clear();CAP.init={};CAP.frags.clear();CAP.batch=[];CAP.q=[];CAP.playAt=0;CAP.segs=[];CAP.prompt='';CAP.shown='';CAP.lastSent='';CAP.ok=0;CAP.fail=0;capLine=-1;
  $('#subEn').innerHTML='<span class="wait">영어 자막 준비 중…</span>';$('#subKo').innerHTML='';$('#subx').scrollTop=0};
 const capDetach=()=>{CAP.run++};
